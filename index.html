@@ -1,0 +1,1818 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0f172a">
+<title>工作台</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<style>
+:root {
+  --bg: #f0f2f7;
+  --sidebar-bg: #0f172a;
+  --sidebar-text: #94a3b8;
+  --sidebar-active: #ffffff;
+  --sidebar-hover: #1e293b;
+  --primary: #6366f1;
+  --primary-light: #eef2ff;
+  --primary-dark: #4f46e5;
+  --card-bg: #ffffff;
+  --text: #1e293b;
+  --text-light: #64748b;
+  --text-muted: #94a3b8;
+  --border: #e2e8f0;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --info: #3b82f6;
+  --radius: 14px;
+  --radius-sm: 10px;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+  --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+  --shadow-lg: 0 12px 32px rgba(0,0,0,0.1);
+  --transition: all 0.2s cubic-bezier(0.4,0,0.2,1);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  min-height: 100vh;
+  display: flex;
+  -webkit-font-smoothing: antialiased;
+}
+/* ====== SIDEBAR ====== */
+.sidebar {
+  width: 220px; min-width: 220px;
+  background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+  color: var(--sidebar-text);
+  display: flex; flex-direction: column;
+  position: fixed; top: 0; left: 0; bottom: 0;
+  z-index: 100;
+  border-right: 1px solid rgba(255,255,255,0.06);
+}
+.sidebar-header {
+  padding: 24px 20px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.sidebar-header h1 {
+  color: #fff; font-size: 20px; font-weight: 700;
+  display: flex; align-items: center; gap: 8px;
+}
+.sidebar-header h1 .logo-dot {
+  width: 8px; height: 8px;
+  background: var(--primary);
+  border-radius: 50%;
+  box-shadow: 0 0 12px var(--primary);
+}
+.sidebar-header .subtitle {
+  font-size: 12px; color: var(--sidebar-text); margin-top: 4px; padding-left: 16px;
+}
+.sidebar-nav { flex: 1; padding: 8px 0; overflow-y: auto; }
+.nav-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 20px; cursor: pointer;
+  transition: var(--transition);
+  border-left: 3px solid transparent;
+  font-size: 14px; color: var(--sidebar-text);
+  user-select: none; position: relative;
+  -webkit-tap-highlight-color: transparent;
+}
+.nav-item:hover { background: var(--sidebar-hover); color: #e2e8f0; }
+.nav-item.active {
+  background: rgba(99,102,241,0.12);
+  border-left-color: var(--primary);
+  color: var(--sidebar-active);
+  font-weight: 600;
+}
+.nav-icon { font-size: 18px; width: 24px; text-align: center; flex-shrink: 0; }
+.nav-badge {
+  margin-left: auto;
+  background: var(--danger);
+  color: #fff; font-size: 10px; font-weight: 700;
+  padding: 2px 7px; border-radius: 10px;
+  min-width: 20px; text-align: center;
+}
+.sidebar-footer {
+  padding: 12px 16px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  font-size: 11px; color: var(--sidebar-text);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.sync-btn {
+  background: rgba(99,102,241,0.15);
+  border: none; color: #a5b4fc;
+  padding: 6px 12px; border-radius: 6px;
+  cursor: pointer; font-size: 12px;
+  transition: var(--transition);
+  font-family: inherit;
+  display: flex; align-items: center; gap: 4px;
+}
+.sync-btn:hover { background: rgba(99,102,241,0.25); color: #c7d2fe; }
+
+/* Overlay */
+.overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); z-index: 99; -webkit-tap-highlight-color: transparent; }
+.overlay.show { display: block; }
+
+/* ====== MAIN ====== */
+.main {
+  flex: 1; margin-left: 220px;
+  padding: 28px; min-height: 100vh;
+  max-width: 100%;
+}
+
+/* Hamburger */
+.hamburger {
+  display: none; position: fixed; top: 14px; left: 14px; z-index: 110;
+  width: 44px; height: 44px;
+  background: var(--sidebar-bg); border: none; border-radius: 12px;
+  color: #fff; font-size: 22px;
+  cursor: pointer; box-shadow: var(--shadow-lg);
+  align-items: center; justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ====== PAGE ====== */
+.page-header {
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid var(--border);
+}
+.page-header h2 {
+  font-size: 26px; font-weight: 700; color: var(--text);
+  display: flex; align-items: center; gap: 10px;
+}
+.page-header p { color: var(--text-light); font-size: 14px; margin-top: 4px; }
+
+/* ====== CARDS ====== */
+.card {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px; margin-bottom: 16px;
+  border: 1px solid var(--border);
+  transition: var(--transition);
+}
+.card:hover { box-shadow: var(--shadow-md); }
+.card-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px; flex-wrap: wrap; gap: 8px;
+}
+.card-header h3 { font-size: 16px; font-weight: 600; color: var(--text); }
+
+/* ====== BUTTONS ====== */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 9px 18px; border: none; border-radius: var(--radius-sm);
+  font-size: 14px; font-weight: 500; cursor: pointer;
+  transition: var(--transition); font-family: inherit;
+  white-space: nowrap;
+}
+.btn-primary { background: var(--primary); color: #fff; box-shadow: 0 2px 8px rgba(99,102,241,0.3); }
+.btn-primary:hover { background: var(--primary-dark); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(99,102,241,0.4); }
+.btn-outline { background: transparent; border: 1.5px solid var(--border); color: var(--text); }
+.btn-outline:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
+.btn-sm { padding: 6px 14px; font-size: 13px; }
+.btn-danger { background: var(--danger); color: #fff; }
+.btn-danger:hover { background: #dc2626; }
+.btn-success { background: var(--success); color: #fff; }
+.btn-icon {
+  width: 36px; height: 36px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 8px; background: transparent; border: 1px solid var(--border);
+  cursor: pointer; transition: var(--transition); font-size: 16px;
+}
+.btn-icon:hover { background: var(--primary-light); border-color: var(--primary); }
+
+/* ====== FORM ====== */
+input, select, textarea {
+  width: 100%; padding: 10px 14px;
+  border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+  font-size: 14px; font-family: inherit; outline: none;
+  transition: var(--transition); background: #f8fafc;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
+  background: #fff;
+}
+
+/* ====== TABLE ====== */
+.table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: var(--radius-sm); }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td { padding: 11px 10px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+th {
+  background: #f8fafc; font-weight: 600; color: var(--text-light);
+  font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;
+  position: sticky; top: 0; z-index: 1;
+}
+tr:hover td { background: #f8faff; }
+
+/* ====== STATS ====== */
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.stat-card {
+  background: var(--card-bg); border-radius: var(--radius);
+  padding: 16px 20px; box-shadow: var(--shadow);
+  border: 1px solid var(--border); text-align: center;
+  transition: var(--transition);
+}
+.stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.stat-value { font-size: 24px; font-weight: 700; color: var(--primary); }
+.stat-label { font-size: 12px; color: var(--text-light); margin-top: 4px; font-weight: 500; }
+.stat-card.success .stat-value { color: var(--success); }
+.stat-card.warning .stat-value { color: var(--warning); }
+.stat-card.danger .stat-value { color: var(--danger); }
+
+/* ====== NEWS ====== */
+.news-categories {
+  display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap;
+}
+.news-cat {
+  padding: 6px 16px; border-radius: 20px; border: 1.5px solid var(--border);
+  background: var(--card-bg); cursor: pointer; font-size: 13px;
+  transition: var(--transition); font-family: inherit; color: var(--text);
+}
+.news-cat.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.news-cat:hover:not(.active) { border-color: var(--primary); color: var(--primary); }
+.news-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
+.news-card {
+  background: var(--card-bg); border-radius: var(--radius);
+  box-shadow: var(--shadow); border: 1px solid var(--border);
+  padding: 18px; cursor: pointer; transition: var(--transition);
+  position: relative; overflow: hidden;
+}
+.news-card::before {
+  content: ''; position: absolute; top: 0; left: 0;
+  width: 4px; height: 100%;
+  background: var(--primary);
+  opacity: 0; transition: var(--transition);
+}
+.news-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+.news-card:hover::before { opacity: 1; }
+.news-card.hot::before { background: var(--danger); }
+.news-card-title {
+  font-size: 15px; font-weight: 600; line-height: 1.5;
+  margin-bottom: 8px;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.news-card-desc {
+  font-size: 13px; color: var(--text-light); line-height: 1.6;
+  margin-bottom: 12px;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.news-card-footer {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 12px; color: var(--text-muted);
+}
+.news-tag {
+  padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;
+}
+.news-tag.hot { background: #fef2f2; color: #dc2626; }
+.news-tag.tech { background: #eff6ff; color: #2563eb; }
+.news-tag.finance { background: #fefce8; color: #ca8a04; }
+.news-tag.general { background: #f0fdf4; color: #16a34a; }
+.hot-badge {
+  display: inline-block; background: var(--danger); color: #fff;
+  font-size: 10px; padding: 2px 6px; border-radius: 4px;
+  margin-left: 6px; vertical-align: middle;
+}
+
+/* ====== NEWS DETAIL MODAL ====== */
+.news-detail-overlay {
+  display: flex; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(15,23,42,0.6); z-index: 300;
+  align-items: center; justify-content: center;
+  backdrop-filter: blur(4px);
+}
+.news-detail {
+  background: var(--card-bg); border-radius: var(--radius);
+  width: 90%; max-width: 640px; max-height: 80vh;
+  overflow-y: auto; padding: 28px;
+  box-shadow: var(--shadow-lg);
+  animation: slideUp 0.3s ease;
+  position: relative;
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.news-detail-close {
+  position: absolute; top: 12px; right: 12px;
+  width: 32px; height: 32px; border-radius: 50%;
+  border: none; background: #f1f5f9; cursor: pointer;
+  font-size: 18px; display: flex; align-items: center; justify-content: center;
+  transition: var(--transition);
+}
+.news-detail-close:hover { background: #e2e8f0; }
+.news-detail-title { font-size: 20px; font-weight: 700; margin-bottom: 12px; line-height: 1.5; }
+.news-detail-meta { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+.news-detail-body { font-size: 15px; line-height: 1.8; color: var(--text); }
+
+/* ====== TODO ====== */
+.todo-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px; border-radius: var(--radius-sm);
+  margin-bottom: 4px; transition: var(--transition);
+  flex-wrap: wrap;
+}
+.todo-item:hover { background: #f8fafc; }
+.todo-checkbox {
+  width: 20px; height: 20px; cursor: pointer;
+  accent-color: var(--primary); flex-shrink: 0;
+}
+.todo-text { flex: 1; min-width: 150px; font-size: 14px; }
+.todo-text.done { text-decoration: line-through; color: var(--text-muted); }
+.todo-actions { display: flex; gap: 6px; }
+.todo-priority {
+  font-size: 11px; padding: 3px 10px; border-radius: 12px; font-weight: 600;
+}
+.priority-high { background: #fef2f2; color: #dc2626; }
+.priority-medium { background: #fffbeb; color: #d97706; }
+.priority-low { background: #f0fdf4; color: #16a34a; }
+.add-todo-row {
+  display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;
+}
+.add-todo-row input { flex: 1; min-width: 150px; }
+.add-todo-row select { width: auto; min-width: 100px; }
+
+/* ====== WEIGHT ====== */
+.weight-entry-row {
+  display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 16px;
+}
+.weight-entry-row > div { display: flex; flex-direction: column; gap: 4px; }
+.weight-entry-row label { font-size: 12px; color: var(--text-light); font-weight: 600; }
+.time-badge {
+  display: inline-block; padding: 4px 10px; border-radius: 6px;
+  font-size: 12px; font-weight: 600;
+}
+.time-morning { background: #fef3c7; color: #92400e; }
+.time-evening { background: #dbeafe; color: #1e40af; }
+.chart-container { position: relative; height: 320px; margin: 16px 0; }
+.month-selector { display: flex; gap: 8px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+.month-selector button {
+  padding: 6px 16px; border: 1.5px solid var(--border); border-radius: 20px;
+  background: var(--card-bg); cursor: pointer; font-size: 13px;
+  transition: var(--transition); font-family: inherit;
+}
+.month-selector button.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.weight-records { max-height: 400px; overflow-y: auto; }
+.weight-record {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 14px; border-bottom: 1px solid var(--border);
+  font-size: 14px; flex-wrap: wrap; gap: 8px;
+  border-radius: var(--radius-sm); margin-bottom: 2px;
+}
+.weight-record:hover { background: #f8fafc; }
+
+/* ====== MAOYANG ====== */
+.period-tabs { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+.period-tab {
+  padding: 8px 16px; border: 1.5px solid var(--border); border-radius: 8px;
+  background: var(--card-bg); cursor: pointer; font-size: 13px;
+  transition: var(--transition); font-family: inherit;
+}
+.period-tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.period-tab-add {
+  padding: 8px 12px; border: 1.5px dashed var(--border); border-radius: 8px;
+  background: transparent; cursor: pointer; font-size: 16px; color: var(--text-light);
+  transition: var(--transition);
+}
+.period-tab-add:hover { border-color: var(--primary); color: var(--primary); }
+
+/* ====== PHOTOGRAPHY ====== */
+.photo-categories {
+  display: flex; gap: 6px; margin-bottom: 20px; flex-wrap: wrap;
+}
+.photo-cat {
+  padding: 7px 18px; border-radius: 20px; border: 1.5px solid var(--border);
+  background: var(--card-bg); cursor: pointer; font-size: 13px;
+  transition: var(--transition); font-family: inherit; color: var(--text);
+}
+.photo-cat.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.photo-cat:hover:not(.active) { border-color: var(--primary); color: var(--primary); }
+.photo-grid {
+  column-count: 3; column-gap: 14px;
+}
+.photo-card {
+  break-inside: avoid; margin-bottom: 14px;
+  background: var(--card-bg); border-radius: var(--radius);
+  box-shadow: var(--shadow); border: 1px solid var(--border);
+  overflow: hidden; cursor: pointer; transition: var(--transition);
+}
+.photo-card:hover { box-shadow: var(--shadow-md); transform: translateY(-3px); }
+.photo-card img {
+  width: 100%; display: block;
+  background: #e2e8f0;
+  min-height: 160px;
+  object-fit: cover;
+}
+.photo-card-body { padding: 12px 14px; }
+.photo-card-title {
+  font-size: 14px; font-weight: 600; margin-bottom: 4px;
+  display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;
+}
+.photo-card-cat {
+  font-size: 11px; color: var(--text-muted);
+  display: flex; align-items: center; gap: 4px;
+}
+.photo-card-platform {
+  font-size: 10px; background: #f1f5f9; color: var(--text-light);
+  padding: 2px 8px; border-radius: 6px; font-weight: 600;
+}
+.photo-card-likes {
+  font-size: 10px; color: #ef4444; font-weight: 600;
+  display: flex; align-items: center; gap: 2px;
+}
+.photo-card-actions {
+  position: absolute; top: 8px; right: 8px;
+  display: flex; gap: 4px; opacity: 0; transition: var(--transition);
+}
+.photo-card:hover .photo-card-actions { opacity: 1; }
+.photo-card { position: relative; }
+.photo-user-badge {
+  position: absolute; top: 8px; left: 8px;
+  background: var(--primary); color: #fff;
+  font-size: 10px; padding: 3px 8px; border-radius: 10px;
+  font-weight: 600; z-index: 1;
+}
+/* Photo detail */
+.photo-detail-overlay {
+  display: flex; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(15,23,42,0.85); z-index: 300;
+  align-items: center; justify-content: center;
+  backdrop-filter: blur(8px);
+}
+.photo-detail {
+  background: var(--card-bg); border-radius: var(--radius);
+  width: 92%; max-width: 900px; max-height: 90vh;
+  overflow-y: auto; box-shadow: var(--shadow-lg);
+  animation: slideUp 0.3s ease; position: relative;
+}
+.photo-detail-img {
+  width: 100%; max-height: 500px; object-fit: contain;
+  background: #0f172a; display: block;
+}
+.photo-detail-body { padding: 24px; }
+.photo-detail-title { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+.photo-detail-meta { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; }
+.technique-section { margin-bottom: 20px; }
+.technique-section h4 {
+  font-size: 15px; font-weight: 700; margin-bottom: 8px;
+  color: var(--primary); display: flex; align-items: center; gap: 6px;
+}
+.technique-list { list-style: none; }
+.technique-list li {
+  padding: 8px 0; border-bottom: 1px solid var(--border);
+  font-size: 14px; line-height: 1.7; display: flex; gap: 10px;
+}
+.technique-list li:last-child { border-bottom: none; }
+.technique-num {
+  width: 24px; height: 24px; min-width: 24px;
+  background: var(--primary-light); color: var(--primary);
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; margin-top: 2px;
+}
+.camera-settings {
+  background: #f8fafc; border-radius: var(--radius-sm);
+  padding: 12px 16px; margin-top: 12px;
+  font-size: 13px; color: var(--text-light);
+  display: flex; flex-wrap: wrap; gap: 16px;
+}
+.camera-settings span { display: flex; align-items: center; gap: 4px; }
+.photo-detail-close {
+  position: absolute; top: 12px; right: 12px; z-index: 10;
+  width: 36px; height: 36px; border-radius: 50%;
+  border: none; background: rgba(0,0,0,0.5); color: #fff;
+  cursor: pointer; font-size: 20px;
+  display: flex; align-items: center; justify-content: center;
+  transition: var(--transition);
+}
+.photo-detail-close:hover { background: rgba(0,0,0,0.8); }
+
+@media (max-width: 768px) {
+  .photo-grid { column-count: 2; column-gap: 10px; }
+  .photo-card { margin-bottom: 10px; }
+  .photo-detail { width: 96%; max-height: 95vh; }
+  .photo-detail-img { max-height: 300px; }
+  .photo-detail-body { padding: 16px; }
+  .photo-detail-title { font-size: 18px; }
+}
+@media (max-width: 400px) {
+  .photo-grid { column-count: 1; }
+}
+
+/* ====== SYNC MODAL ====== */
+.sync-section { margin-bottom: 20px; }
+.sync-section h4 { font-size: 15px; margin-bottom: 10px; color: var(--text); }
+.sync-section p { font-size: 13px; color: var(--text-light); margin-bottom: 10px; }
+.sync-code-box {
+  background: #f8fafc; border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm); padding: 16px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 12px; word-break: break-all;
+  max-height: 120px; overflow-y: auto; margin: 10px 0;
+}
+.qr-wrapper {
+  display: flex; justify-content: center; margin: 16px 0;
+  background: #fff; padding: 12px; border-radius: var(--radius-sm);
+}
+.qr-wrapper canvas, .qr-wrapper img { border-radius: 8px; }
+
+/* ====== MODAL ====== */
+.modal-overlay {
+  display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(15,23,42,0.5); z-index: 200;
+  align-items: center; justify-content: center;
+  backdrop-filter: blur(2px);
+}
+.modal-overlay.show { display: flex; }
+.modal {
+  background: var(--card-bg); border-radius: var(--radius);
+  padding: 24px; max-width: 520px; width: 92%;
+  max-height: 85vh; overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+  animation: slideUp 0.25s ease;
+}
+.modal h3 { margin-bottom: 16px; font-size: 18px; font-weight: 700; }
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+.form-group { margin-bottom: 12px; }
+.form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: var(--text-light); }
+
+/* ====== EMPTY STATE ====== */
+.empty-state { text-align: center; padding: 48px 20px; color: var(--text-light); }
+.empty-state-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.5; }
+.empty-state p { font-size: 14px; }
+
+/* ====== LOADING SKELETON ====== */
+.skeleton {
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius-sm);
+}
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+.skeleton-card { height: 120px; }
+
+/* ====== TOAST ====== */
+.toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  background: #1e293b; color: #fff; padding: 10px 22px;
+  border-radius: 10px; font-size: 14px; z-index: 400;
+  box-shadow: var(--shadow-lg);
+  animation: toastIn 0.3s ease;
+}
+@keyframes toastIn { from { opacity: 0; transform: translateX(-50%) translateY(12px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+
+/* ====== RESPONSIVE ====== */
+@media (max-width: 768px) {
+  body { flex-direction: column; }
+  .sidebar {
+    transform: translateX(-100%); width: 260px; min-width: 260px;
+  }
+  .sidebar.open { transform: translateX(0); }
+  .main { margin-left: 0; padding: 60px 14px 20px; }
+  .hamburger { display: flex; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .news-grid { grid-template-columns: 1fr; }
+  .page-header h2 { font-size: 20px; }
+  .modal { width: 95%; padding: 18px; }
+  .weight-entry-row { flex-direction: column; align-items: stretch; }
+  .weight-entry-row > div { width: 100%; }
+  .weight-entry-row button { align-self: stretch; }
+  .btn { padding: 10px 16px; min-height: 44px; }
+  .btn-sm { padding: 6px 12px; min-height: 36px; }
+  input, select, textarea { font-size: 16px; padding: 12px 14px; }
+  .nav-item { padding: 14px 20px; font-size: 15px; }
+  .card { padding: 14px; }
+  .chart-container { height: 250px; }
+  .table-wrapper::after {
+    content: '← 左右滑动查看 →'; display: block; text-align: center;
+    font-size: 11px; color: var(--text-muted); padding: 8px 0 0;
+  }
+  .news-detail { width: 95%; padding: 20px; }
+  .news-detail-title { font-size: 17px; }
+}
+@media (max-width: 380px) {
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+  .stat-card { padding: 12px 10px; }
+  .stat-value { font-size: 18px; }
+}
+
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+</style>
+</head>
+<body>
+
+<!-- Hamburger -->
+<button class="hamburger" id="hamburger" onclick="toggleSidebar()">☰</button>
+<!-- Overlay -->
+<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
+<!-- Sidebar -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <h1><span class="logo-dot"></span>工作台</h1>
+    <div class="subtitle">Allen's Workspace</div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-item active" data-page="news" onclick="switchPage('news')">
+      <span class="nav-icon">🔥</span> 新闻与热点
+    </div>
+    <div class="nav-item" data-page="todo" onclick="switchPage('todo')">
+      <span class="nav-icon">✅</span> 待办
+      <span class="nav-badge" id="todo-badge" style="display:none">0</span>
+    </div>
+    <div class="nav-item" data-page="weight" onclick="switchPage('weight')">
+      <span class="nav-icon">⚖️</span> 体重
+    </div>
+    <div class="nav-item" data-page="maoyang" onclick="switchPage('maoyang')">
+      <span class="nav-icon">🐑</span> 羊毛
+    </div>
+    <div class="nav-item" data-page="photo" onclick="switchPage('photo')">
+      <span class="nav-icon">📷</span> 摄影
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    <span>v2.0</span>
+    <button class="sync-btn" onclick="openSyncPanel()">🔄 同步数据</button>
+  </div>
+</aside>
+
+<!-- ====== MAIN CONTENT ====== -->
+<main class="main" id="main-content">
+
+<!-- ====== NEWS PAGE ====== -->
+<div class="page" id="page-news">
+  <div class="page-header">
+    <h2>🔥 新闻与热点</h2>
+    <p>实时资讯与热点话题</p>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <div class="news-categories" id="news-cats">
+        <button class="news-cat active" data-cat="all" onclick="filterNews('all')">全部</button>
+        <button class="news-cat" data-cat="hot" onclick="filterNews('hot')">🔥 热点</button>
+        <button class="news-cat" data-cat="tech" onclick="filterNews('tech')">💻 科技</button>
+        <button class="news-cat" data-cat="finance" onclick="filterNews('finance')">💰 财经</button>
+        <button class="news-cat" data-cat="general" onclick="filterNews('general')">📋 综合</button>
+      </div>
+      <button class="btn btn-outline btn-sm" onclick="refreshNews()">🔄 刷新</button>
+    </div>
+    <div class="news-grid" id="news-container">
+      <div class="skeleton skeleton-card"></div>
+      <div class="skeleton skeleton-card"></div>
+      <div class="skeleton skeleton-card"></div>
+      <div class="skeleton skeleton-card"></div>
+      <div class="skeleton skeleton-card"></div>
+      <div class="skeleton skeleton-card"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== TODO PAGE ====== -->
+<div class="page" id="page-todo" style="display:none">
+  <div class="page-header">
+    <h2>✅ 待办</h2>
+    <p>管理你的任务和计划</p>
+  </div>
+  <div class="card">
+    <div class="add-todo-row">
+      <input type="text" id="todo-input" placeholder="输入新待办..." onkeydown="if(event.key==='Enter')addTodo()">
+      <select id="todo-priority">
+        <option value="low">低优先级</option>
+        <option value="medium" selected>中优先级</option>
+        <option value="high">高优先级</option>
+      </select>
+      <button class="btn btn-primary" onclick="addTodo()">添加</button>
+    </div>
+    <div id="todo-list"></div>
+  </div>
+</div>
+
+<!-- ====== WEIGHT PAGE ====== -->
+<div class="page" id="page-weight" style="display:none">
+  <div class="page-header">
+    <h2>⚖️ 体重</h2>
+    <p>早晚记录，月度追踪</p>
+  </div>
+  <div class="card">
+    <h3 style="margin-bottom:12px">记录体重</h3>
+    <div class="weight-entry-row">
+      <div><label>日期</label><input type="date" id="weight-date"></div>
+      <div><label>时段</label><select id="weight-period"><option value="morning">🌅 早晨</option><option value="evening">🌙 晚上</option></select></div>
+      <div><label>体重 (kg)</label><input type="number" id="weight-value" placeholder="例: 65.0" step="0.1" min="20" max="300" inputmode="decimal"></div>
+      <button class="btn btn-primary" onclick="addWeight()">记录</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <h3>体重��线</h3>
+      <div class="month-selector" id="weight-month-selector"></div>
+    </div>
+    <div class="chart-container"><canvas id="weight-chart"></canvas></div>
+  </div>
+  <div class="stats-grid" id="weight-stats"></div>
+  <div class="card">
+    <div class="card-header"><h3>历史记录</h3></div>
+    <div class="weight-records" id="weight-records"></div>
+  </div>
+</div>
+
+<!-- ====== MAOYANG PAGE ====== -->
+<div class="page" id="page-maoyang" style="display:none">
+  <div class="page-header">
+    <h2>🐑 羊毛</h2>
+    <p>记录每一笔收益和支出</p>
+  </div>
+  <div class="stats-grid" id="maoyang-summary"></div>
+  <div class="card" style="margin-top:16px">
+    <div class="period-tabs" id="maoyang-tabs">
+      <div class="period-tab active" data-period="current" onclick="switchMaoyangPeriod('current')">本月</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <h3 id="maoyang-table-title">本月数据</h3>
+      <button class="btn btn-primary btn-sm" onclick="addMaoyangRow()">+ 添加记录</button>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>姓名</th><th>物品</th><th>下单日期</th><th>本金</th><th>默认垫付</th>
+            <th>结账</th><th>运费</th><th>备注</th><th>打款</th><th>利润</th>
+            <th>结账日期</th><th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="maoyang-table-body"></tbody>
+      </table>
+    </div>
+    <div id="maoyang-empty" class="empty-state" style="display:none">
+      <div class="empty-state-icon">📋</div><p>暂无数据，点击"添加记录"开始</p>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<!-- ====== PHOTOGRAPHY PAGE ====== -->
+<div class="page" id="page-photo" style="display:none">
+  <div class="page-header">
+    <h2>📷 摄影</h2>
+    <p>精选图虫、500px、小红书等高赞佳作，学习拍摄技巧，提升审美</p>
+  </div>
+  <div class="photo-categories" id="photo-cats">
+    <button class="photo-cat active" data-cat="all" onclick="filterPhotos('all')">全部</button>
+    <button class="photo-cat" data-cat="portrait" onclick="filterPhotos('portrait')">👤 人像</button>
+    <button class="photo-cat" data-cat="landscape" onclick="filterPhotos('landscape')">🏔️ 风光</button>
+    <button class="photo-cat" data-cat="street" onclick="filterPhotos('street')">🚶 街拍</button>
+    <button class="photo-cat" data-cat="architecture" onclick="filterPhotos('architecture')">🏛️ 建筑</button>
+    <button class="photo-cat" data-cat="macro" onclick="filterPhotos('macro')">🔍 微距</button>
+    <button class="photo-cat" data-cat="hot" onclick="filterPhotos('hot')">🔥 高赞</button>
+  </div>
+  <div class="card" style="margin-bottom:16px;padding:12px 16px">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+      <span style="font-size:13px;color:var(--text-light)">💡 来源：图虫·500px·小红书 ｜ 点击照片查看拍摄技巧与参数</span>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-primary btn-sm" onclick="openAddPhotoModal()">📷 手动添加</button>
+        <button class="btn btn-outline btn-sm" onclick="autoUpdatePhotos()">🔄 自动更新</button>
+      </div>
+    </div>
+  </div>
+  <div class="photo-grid" id="photo-grid"></div>
+</div>
+
+<!-- Add Photo Modal -->
+<div class="modal-overlay" id="photo-add-modal">
+  <div class="modal" style="max-width:560px">
+    <h3>📷 添加照片</h3>
+    <div class="form-group"><label>照片标题</label><input type="text" id="pp-title" placeholder="如：逆光人像剪影"></div>
+    <div class="form-group"><label>分类</label><select id="pp-cat"><option value="portrait">👤 人像</option><option value="landscape">🏔️ 风光</option><option value="street">🚶 街拍</option><option value="architecture">🏛️ 建筑</option><option value="macro">🔍 微距</option></select></div>
+    <div class="form-group"><label>图片链接</label><input type="url" id="pp-img" placeholder="https://...（粘贴图片URL）"></div>
+    <div class="form-group"><label>相机/镜头型号</label><input type="text" id="pp-gear" placeholder="如：Sony A7M4 | 85mm f/1.4"></div>
+    <div class="form-group"><label>参数设置</label><input type="text" id="pp-settings" placeholder="如：f/1.8, 1/500s, ISO 100"></div>
+    <div class="form-group"><label>拍摄技巧（每行一条）</label><textarea id="pp-techniques" rows="4" placeholder="1. 选择侧逆光拍摄，勾勒人物轮廓&#10;2. 85mm大光圈虚化背景&#10;3. 引导模特自然互动避免僵硬"></textarea></div>
+    <div class="form-group"><label>来源平台</label><select id="pp-platform"><option value="图虫">图虫</option><option value="500px">500px</option><option value="小红书">小红书</option><option value="视觉中国">视觉中国</option><option value="微博摄影">微博摄影</option><option value="其他">其他</option></select></div>
+    <div class="form-group"><label>点赞数</label><input type="number" id="pp-likes" placeholder="如：2300" min="0"></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeAddPhotoModal()">取消</button>
+      <button class="btn btn-primary" onclick="addUserPhoto()">添加</button>
+    </div>
+  </div>
+</div>
+
+<!-- Photo Detail Overlay -->
+<div id="photo-detail-overlay" class="photo-detail-overlay" style="display:none" onclick="if(event.target===this)closePhotoDetail()">
+  <div class="photo-detail" id="photo-detail-content"></div>
+</div>
+
+<!-- ====== SYNC MODAL ====== -->
+<div class="modal-overlay" id="sync-modal">
+  <div class="modal" style="max-width:560px">
+    <h3>🔄 多设备数据同步</h3>
+    <div class="sync-section">
+      <h4>📤 导出数据</h4>
+      <p>将当前所有数据导出为文件，在其他设备上导入即可同步。</p>
+      <button class="btn btn-primary" onclick="exportData()">📥 下载数据文件</button>
+    </div>
+    <div class="sync-section">
+      <h4>📥 导入数据</h4>
+      <p>选择之前导出的数据文件进行恢复。<strong style="color:var(--danger)">注意：导入将覆盖当前所有数据。</strong></p>
+      <input type="file" id="import-file" accept=".json" style="margin-bottom:8px" onchange="importData(this)">
+    </div>
+    <div class="sync-section">
+      <h4>🔗 同步码分享</h4>
+      <p>生成同步码，在另一台设备上扫描二维码或输入同步码即可同步。</p>
+      <button class="btn btn-outline btn-sm" onclick="generateSyncCode()">生成同步码</button>
+      <div id="sync-code-area" style="display:none;margin-top:12px">
+        <div class="sync-code-box" id="sync-code-text"></div>
+        <div class="qr-wrapper" id="sync-qr"></div>
+      </div>
+      <div style="margin-top:10px">
+        <input type="text" id="sync-code-input" placeholder="粘贴同步码..." style="margin-bottom:6px">
+        <button class="btn btn-success btn-sm" onclick="applySyncCode()">应用同步码</button>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeSyncPanel()">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====== MAOYANG MODAL ====== -->
+<div class="modal-overlay" id="maoyang-modal">
+  <div class="modal">
+    <h3 id="maoyang-modal-title">添加记录</h3>
+    <div class="form-group"><label>姓名</label><input type="text" id="my-name" placeholder="你的名字"></div>
+    <div class="form-group"><label>物品</label><input type="text" id="my-item" placeholder="物品名称"></div>
+    <div class="form-group"><label>下单日期</label><input type="date" id="my-order-date"></div>
+    <div class="form-group"><label>本金 (¥)</label><input type="number" id="my-cost" placeholder="0.00" step="0.01"></div>
+    <div class="form-group"><label>默认垫付</label><select id="my-advance"><option value="">无</option><option value="退">退</option><option value="垫">垫</option></select></div>
+    <div class="form-group"><label>结账 (¥)</label><input type="number" id="my-settlement" placeholder="0.00" step="0.01"></div>
+    <div class="form-group"><label>运费 (¥)</label><input type="number" id="my-shipping" placeholder="0.00" step="0.01"></div>
+    <div class="form-group"><label>备注</label><input type="text" id="my-tracking" placeholder="备注信息"></div>
+    <div class="form-group"><label>打款 (¥)</label><input type="number" id="my-payment" placeholder="0.00" step="0.01"></div>
+    <div class="form-group"><label>结账日期</label><input type="date" id="my-settle-date"></div>
+    <input type="hidden" id="my-edit-id">
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeMaoyangModal()">取消</button>
+      <button class="btn btn-primary" onclick="saveMaoyangRecord()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====== NEWS DETAIL OVERLAY ====== -->
+<div id="news-detail-overlay" class="news-detail-overlay" style="display:none" onclick="if(event.target===this)closeNewsDetail()">
+  <div class="news-detail" id="news-detail-content"></div>
+</div>
+
+<script>
+// ============ STATE ============
+const STORAGE_KEY = 'allen_workbench';
+let state = {
+  todos: [], weights: [],
+  maoyang: { periods: {} },
+  currentPeriod: '',
+  currentPage: 'news'
+};
+window.allNews = [];
+window.currentNewsFilter = 'all';
+
+function loadState() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      state.todos = parsed.todos || [];
+      state.weights = parsed.weights || [];
+      state.maoyang = parsed.maoyang || { periods: {} };
+      state.userPhotos = parsed.userPhotos || [];
+    }
+  } catch(e) {}
+}
+function saveState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    todos: state.todos, weights: state.weights, maoyang: state.maoyang,
+    userPhotos: state.userPhotos || []
+  }));
+}
+
+function getPeriodKey(d) { const dt = new Date(d); return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`; }
+function getCurrentPeriodKey() { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}`; }
+function ensurePeriod(k) {
+  if (!state.maoyang.periods[k]) state.maoyang.periods[k] = [];
+  return state.maoyang.periods[k];
+}
+
+// ============ UI HELPERS ============
+function showToast(msg) {
+  const el = document.querySelector('.toast'); if (el) el.remove();
+  const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg;
+  document.body.appendChild(t); setTimeout(() => t.remove(), 2500);
+}
+function formatDate(s) { if (!s) return '-'; const d = new Date(s); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function formatMoney(v) { return '¥' + (parseFloat(v) || 0).toFixed(2); }
+function escapeHtml(s) { const d = document.createElement('div'); d.textContent = s||''; return d.innerHTML; }
+function timeAgo(d) {
+  const diff = new Date() - new Date(d); if (isNaN(diff)) return '';
+  const m = Math.floor(diff/60000); if (m<60) return m+'分钟前';
+  const h = Math.floor(m/60); if (h<24) return h+'小时前';
+  return Math.floor(h/24)+'天前';
+}
+
+// ============ SIDEBAR & NAV ============
+function switchPage(p) {
+  state.currentPage = p;
+  document.querySelectorAll('.page').forEach(el => el.style.display = 'none');
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  const pg = document.getElementById('page-'+p); if (pg) pg.style.display = 'block';
+  const nav = document.querySelector(`.nav-item[data-page="${p}"]`); if (nav) nav.classList.add('active');
+  closeSidebar();
+  if (p==='todo') renderTodos();
+  if (p==='weight') renderWeightPage();
+  if (p==='maoyang') renderMaoyangPage();
+  if (p==='photo') renderPhotos();
+  if (p==='news' && !window.newsLoaded) fetchNews();
+  updateBadges();
+}
+function toggleSidebar() {
+  const s = document.getElementById('sidebar'), o = document.getElementById('overlay');
+  if (s.classList.contains('open')) { closeSidebar(); } else { s.classList.add('open'); o.classList.add('show'); }
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+}
+function updateBadges() {
+  const b = document.getElementById('todo-badge');
+  const n = state.todos.filter(t=>!t.done).length;
+  if (n>0) { b.style.display='inline'; b.textContent=n; } else { b.style.display='none'; }
+}
+
+// ============ NEWS & HOTSPOTS ============
+window.newsLoaded = false;
+
+function getCuratedNews() {
+  const now = new Date();
+  const ts = (offset) => new Date(now.getTime() - offset).toISOString();
+  return [
+    { title:'2026年上半年GDP同比增长5.2%，经济运行稳中向好', desc:'国家统计局发布数据显示，上半年国内生产总值同比增长5.2%，其中第二季度增长5.5%。消费、投资、出口协同发力。', time:ts(3600000), cat:'hot', tag:'热点' },
+    { title:'全球AI竞争加剧：各大科技公司竞相发布新一代大模型', desc:'OpenAI、Google DeepMind、Anthropic等公司纷纷推出新一代AI模型，参数规模突破万亿级别，多模态能力成为竞争焦点。', time:ts(7200000), cat:'tech', tag:'科技' },
+    { title:'新能源汽车渗透率突破50%，燃油车加速退场', desc:'乘联会数据显示，6月国内新能源汽车零售渗透率达到52%，首次全面超越燃油车。比亚迪、特斯拉等头部品牌持续领跑。', time:ts(10800000), cat:'hot', tag:'热点' },
+    { title:'A股三大指数全线上涨，沪指重回3400点', desc:'受政策利好及外资流入推动，A股市场迎来普涨行情。科技、半导体板块表现强势，两市成交额突破1.2万亿元。', time:ts(14400000), cat:'finance', tag:'财经' },
+    { title:'6G研发取得关键突破，太赫兹通信实验成功', desc:'中国科研团队在太赫兹通信领域取得重大突破，实现100Gbps峰值速率传输，为6G商用奠定技术基础。', time:ts(18000000), cat:'tech', tag:'科技' },
+    { title:'2026暑期档票房突破80亿，国产片表现亮眼', desc:'截至7月底，暑期档总票房突破80亿元，其中国产影片贡献占比超过75%。科幻、动画类影片表现突出。', time:ts(21600000), cat:'general', tag:'综合' },
+    { title:'央行宣布定向降准0.25个百分点', desc:'中国人民银行决定对中小银行实施定向降准，释放长期资金约5000亿元，支持实体经济发展。', time:ts(25200000), cat:'finance', tag:'财经' },
+    { title:'国际空间站退役计划公布，中国空间站成唯一在轨空间站', desc:'NASA公布国际空间站将于2028年退役，届时中国天宫空间站将成为全球唯一在轨运行的空间站。', time:ts(28800000), cat:'general', tag:'综合' },
+    { title:'鸿蒙生态设备突破10亿台，华为加速构建全场景智慧生活', desc:'华为开发者大会公布鸿蒙生态最新数据，搭载HarmonyOS的设备数量已突破10亿，覆盖手机、平板、汽车等全场景。', time:ts(32400000), cat:'tech', tag:'科技' },
+    { title:'美联储维持利率不变，市场预期年内降息一次', desc:'美联储7月议息会议决定维持联邦基金利率不变，但释放鸽派信号，市场普遍预计9月将启动降息周期。', time:ts(36000000), cat:'finance', tag:'财经' },
+    { title:'量子计算商用化提速：首个量子云计算平台上线', desc:'国内首个面向公众开放的量子云计算服务平台正式上线，用户可通过云端访问真实量子处理器进行科研和开发。', time:ts(39600000), cat:'tech', tag:'科技' },
+    { title:'2026年全球粮食安全报告发布：中国粮食自给率保持高位', desc:'联合国粮农组织发布年度报告，中国粮食自给率保持在95%以上，三大主粮实现完全自给。', time:ts(43200000), cat:'general', tag:'综合' },
+    { title:'北京、上海等城市试点自动驾驶商业化运营', desc:'多个一线城市扩大自动驾驶测试范围，部分区域已开始向公众提供收费的无人出租车服务。', time:ts(46800000), cat:'hot', tag:'热点' },
+    { title:'二手房成交量回暖，多个城市取消限购政策', desc:'7月以来，一线城市二手房市场成交量明显回升，部分二三线城市已全面取消限购，楼市出现企稳信号。', time:ts(50400000), cat:'finance', tag:'财经' },
+    { title:'中国电竞市场规模突破2000亿，亚运效应持续释放', desc:'《2026中国电竞产业报告》显示，中国电竞市场规模突破2000亿元，用户规模超5亿人。', time:ts(54000000), cat:'general', tag:'综合' },
+    { title:'气候科技投资创新高，碳中和赛道持续火热', desc:'上半年全球气候科技领域融资总额达到480亿美元，中国企业在光伏、储能、碳捕获等领域表现活跃。', time:ts(57600000), cat:'hot', tag:'热点' }
+  ];
+}
+
+async function fetchNews() {
+  const container = document.getElementById('news-container');
+  window.newsLoaded = false;
+  window.allNews = getCuratedNews();
+  renderNews(window.allNews);
+  window.newsLoaded = true;
+  
+  // Try fetching real news in background
+  try {
+    const sources = [
+      { url:'https://api.allorigins.win/raw?url='+encodeURIComponent('https://feedx.net/rss/ithome.xml'), cat:'tech', tag:'科技' },
+      { url:'https://api.allorigins.win/raw?url='+encodeURIComponent('https://feedx.net/rss/36kr.xml'), cat:'tech', tag:'科技' }
+    ];
+    for (const src of sources) {
+      try {
+        const resp = await fetch(src.url, { signal: AbortSignal.timeout(6000) });
+        if (!resp.ok) continue;
+        const xml = await resp.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(xml, 'text/xml');
+        const items = doc.querySelectorAll('item');
+        items.forEach((item, i) => {
+          if (i >= 8) return;
+          window.allNews.push({
+            title: item.querySelector('title')?.textContent || '',
+            desc: (item.querySelector('description')?.textContent || '').replace(/<[^>]*>/g,'').substring(0,150),
+            link: item.querySelector('link')?.textContent || '',
+            time: item.querySelector('pubDate')?.textContent || new Date().toISOString(),
+            cat: src.cat, tag: src.tag
+          });
+        });
+      } catch(e) {}
+    }
+    window.allNews.sort((a,b) => new Date(b.time) - new Date(a.time));
+    renderNews(window.allNews);
+  } catch(e) {}
+}
+
+function filterNews(cat) {
+  window.currentNewsFilter = cat;
+  document.querySelectorAll('.news-cat').forEach(b => b.classList.toggle('active', b.dataset.cat === cat));
+  const filtered = cat === 'all' ? window.allNews : window.allNews.filter(n => n.cat === cat);
+  renderNews(filtered);
+}
+
+function renderNews(newsList) {
+  const container = document.getElementById('news-container');
+  if (!newsList || newsList.length === 0) {
+    container.innerHTML = '<div class="empty-state"><p>暂无新闻</p></div>'; return;
+  }
+  const filtered = window.currentNewsFilter === 'all' ? newsList : newsList.filter(n => n.cat === window.currentNewsFilter || window.currentNewsFilter === 'all');
+  if (filtered.length === 0) { container.innerHTML = '<div class="empty-state"><p>该分类暂无新闻</p></div>'; return; }
+  container.innerHTML = filtered.map((n,i) => `
+    <div class="news-card ${n.cat==='hot'?'hot':''}" onclick="openNewsDetail(${i})" data-idx="${i}">
+      <div class="news-card-title">
+        ${n.title}
+        ${n.cat==='hot'?'<span class="hot-badge">HOT</span>':''}
+      </div>
+      <div class="news-card-desc">${escapeHtml(n.desc)}</div>
+      <div class="news-card-footer">
+        <span class="news-tag ${n.cat}">${n.tag}</span>
+        <span>${timeAgo(n.time)}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function openNewsDetail(idx) {
+  const list = window.currentNewsFilter === 'all' ? window.allNews : window.allNews.filter(n => n.cat === window.currentNewsFilter);
+  const item = list[idx];
+  if (!item) return;
+  const overlay = document.getElementById('news-detail-overlay');
+  const content = document.getElementById('news-detail-content');
+  content.innerHTML = `
+    <button class="news-detail-close" onclick="closeNewsDetail()">✕</button>
+    <div class="news-detail-title">${item.title}</div>
+    <div class="news-detail-meta">
+      <span class="news-tag ${item.cat||'general'}">${item.tag||'综合'}</span>
+      &nbsp;&nbsp;${timeAgo(item.time)}
+    </div>
+    <div class="news-detail-body">
+      <p>${item.desc}</p>
+      ${item.link ? `<p style="margin-top:16px"><a href="${item.link}" target="_blank" style="color:var(--primary)">📎 查看原文 →</a></p>` : ''}
+    </div>
+  `;
+  overlay.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+function closeNewsDetail() {
+  document.getElementById('news-detail-overlay').style.display = 'none';
+  document.body.style.overflow = '';
+}
+function refreshNews() {
+  document.getElementById('news-container').innerHTML = '<div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div>';
+  window.newsLoaded = false;
+  fetchNews();
+}
+
+// ============ TODO ============
+function renderTodos() {
+  const list = document.getElementById('todo-list');
+  if (state.todos.length === 0) {
+    list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📝</div><p>暂无待办</p></div>';
+    updateBadges(); return;
+  }
+  const order = { high:0, medium:1, low:2 };
+  const sorted = [...state.todos].sort((a,b) => { if (a.done!==b.done) return a.done?1:-1; return order[a.priority]-order[b.priority]; });
+  list.innerHTML = sorted.map(t => {
+    const idx = state.todos.indexOf(t);
+    return `<div class="todo-item">
+      <input type="checkbox" class="todo-checkbox" ${t.done?'checked':''} onchange="toggleTodo(${idx})">
+      <span class="todo-text ${t.done?'done':''}">${escapeHtml(t.text)}</span>
+      <span class="todo-priority priority-${t.priority}">${t.priority==='high'?'高':t.priority==='medium'?'中':'低'}</span>
+      <div class="todo-actions">
+        <button class="btn btn-outline btn-sm" onclick="editTodoPrompt(${idx})">编辑</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteTodo(${idx})">删除</button>
+      </div>
+    </div>`;
+  }).join('');
+  updateBadges();
+}
+function addTodo() {
+  const inp = document.getElementById('todo-input'), pri = document.getElementById('todo-priority');
+  const txt = inp.value.trim(); if (!txt) { showToast('请输入内容'); return; }
+  state.todos.push({ text:txt, priority:pri.value, done:false, createdAt:new Date().toISOString() });
+  inp.value = ''; saveState(); renderTodos(); showToast('已添加');
+}
+function toggleTodo(i) { state.todos[i].done = !state.todos[i].done; saveState(); renderTodos(); }
+function editTodoPrompt(i) { const t = prompt('编辑待办:', state.todos[i].text); if (t&&t.trim()) { state.todos[i].text=t.trim(); saveState(); renderTodos(); showToast('已更新'); } }
+function deleteTodo(i) { if (confirm('确定删除？')) { state.todos.splice(i,1); saveState(); renderTodos(); showToast('已删除'); } }
+
+// ============ WEIGHT ============
+function renderWeightPage() {
+  const cp = getCurrentPeriodKey();
+  setWeightDateToday(); autoDetectPeriod(); renderMonthSelector();
+  renderWeightChart(cp); renderWeightStats(cp); renderWeightRecords(cp);
+}
+function setWeightDateToday() {
+  const n = new Date(); document.getElementById('weight-date').value = `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;
+}
+function autoDetectPeriod() { document.getElementById('weight-period').value = new Date().getHours()<12 ? 'morning':'evening'; }
+function addWeight() {
+  const date = document.getElementById('weight-date').value;
+  const period = document.getElementById('weight-period').value;
+  const val = parseFloat(document.getElementById('weight-value').value);
+  if (!date) { showToast('请选择日期'); return; }
+  if (!val||val<20||val>300) { showToast('请输入合理的体重(20-300kg)'); return; }
+  state.weights.push({ date, period, value:val, createdAt:new Date().toISOString() });
+  state.weights.sort((a,b)=>new Date(a.date+(a.period==='morning'?'T08:00':'T20:00'))-new Date(b.date+(b.period==='morning'?'T08:00':'T20:00')));
+  document.getElementById('weight-value').value=''; saveState();
+  const pk = getPeriodKey(date);
+  renderMonthSelector(pk); renderWeightChart(pk); renderWeightStats(pk); renderWeightRecords(pk);
+  showToast('已记录');
+}
+function getWeightMonthData(pk) {
+  const [y,m] = pk.split('-').map(Number);
+  return state.weights.filter(w => { const d=new Date(w.date); return d.getFullYear()===y && d.getMonth()+1===m; });
+}
+function renderMonthSelector(active) {
+  const c = document.getElementById('weight-month-selector');
+  const periods = new Set(); state.weights.forEach(w=>periods.add(getPeriodKey(w.date)));
+  periods.add(getCurrentPeriodKey());
+  const sorted = [...periods].sort((a,b)=>b.localeCompare(a));
+  if (!active) active = getCurrentPeriodKey();
+  c.innerHTML = sorted.map(p=>`<button class="${p===active?'active':''}" onclick="switchWeightMonth('${p}')">${p.replace('-','年')}月</button>`).join('');
+}
+function switchWeightMonth(pk) { renderMonthSelector(pk); renderWeightChart(pk); renderWeightStats(pk); renderWeightRecords(pk); }
+
+let weightChart = null;
+function renderWeightChart(pk) {
+  const data = getWeightMonthData(pk);
+  const ctx = document.getElementById('weight-chart').getContext('2d');
+  if (weightChart) weightChart.destroy();
+  const [yr,mo] = pk.split('-').map(Number);
+  const days = new Date(yr,mo,0).getDate();
+  const labels=[], morning=[], evening=[];
+  for (let d=1; d<=days; d++) {
+    const ds = `${yr}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    labels.push(`${mo}/${d}`);
+    const m = data.find(w=>w.date===ds&&w.period==='morning');
+    const e = data.find(w=>w.date===ds&&w.period==='evening');
+    morning.push(m?m.value:null); evening.push(e?e.value:null);
+  }
+  weightChart = new Chart(ctx, {
+    type:'line', data:{ labels, datasets:[
+      { label:'早晨体重', data:morning, borderColor:'#f59e0b', backgroundColor:'rgba(245,158,11,0.08)', tension:0.35, pointRadius:3, pointHoverRadius:6, borderWidth:2, fill:true },
+      { label:'晚上体重', data:evening, borderColor:'#6366f1', backgroundColor:'rgba(99,102,241,0.08)', tension:0.35, pointRadius:3, pointHoverRadius:6, borderWidth:2, fill:true }
+    ]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      interaction:{intersect:false,mode:'index'},
+      plugins:{ legend:{position:'bottom',labels:{usePointStyle:true,padding:24}} },
+      scales:{
+        y:{ title:{display:true,text:'体重 (kg)'}, grace:'5%' },
+        x:{ ticks:{maxTicksLimit:15,maxRotation:45} }
+      }
+    }
+  });
+}
+function renderWeightStats(pk) {
+  const data = getWeightMonthData(pk), c = document.getElementById('weight-stats');
+  if (data.length===0) { c.innerHTML=''; return; }
+  const m = data.filter(w=>w.period==='morning'), e = data.filter(w=>w.period==='evening');
+  const vals = data.map(w=>w.value);
+  const avgM = m.length?(m.reduce((s,w)=>s+w.value,0)/m.length).toFixed(1):'-';
+  const avgE = e.length?(e.reduce((s,w)=>s+w.value,0)/e.length).toFixed(1):'-';
+  const min = Math.min(...vals).toFixed(1), max = Math.max(...vals).toFixed(1);
+  const latest = data[data.length-1];
+  c.innerHTML = `
+    <div class="stat-card"><div class="stat-value">${latest?latest.value.toFixed(1):'-'} kg</div><div class="stat-label">最新 (${latest?.period==='morning'?'早':'晚'})</div></div>
+    <div class="stat-card success"><div class="stat-value">${avgM} kg</div><div class="stat-label">月均早晨 (${m.length}次)</div></div>
+    <div class="stat-card success"><div class="stat-value">${avgE} kg</div><div class="stat-label">月均晚上 (${e.length}次)</div></div>
+    <div class="stat-card warning"><div class="stat-value">${min} ~ ${max} kg</div><div class="stat-label">月度区间</div></div>
+  `;
+}
+function renderWeightRecords(pk) {
+  const data = getWeightMonthData(pk), c = document.getElementById('weight-records');
+  if (data.length===0) { c.innerHTML='<div class="empty-state"><div class="empty-state-icon">⚖️</div><p>本月暂无记录</p></div>'; return; }
+  const cur = getCurrentPeriodKey(), isCur = pk===cur;
+  const sorted = [...data].sort((a,b)=>new Date(b.date+(b.period==='morning'?'T08:00':'T20:00'))-new Date(a.date+(a.period==='morning'?'T08:00':'T20:00')));
+  if (isCur) {
+    c.innerHTML = sorted.map(w=>`
+      <div class="weight-record">
+        <span>${formatDate(w.date)}</span>
+        <span class="time-badge ${w.period==='morning'?'time-morning':'time-evening'}">${w.period==='morning'?'🌅 早':'🌙 晚'}</span>
+        <span style="font-weight:600">${w.value.toFixed(1)} kg</span>
+        <button class="btn btn-danger btn-sm" onclick="deleteWeight('${w.date}','${w.period}')">删除</button>
+      </div>`).join('');
+  } else {
+    const m = data.filter(w=>w.period==='morning'), e = data.filter(w=>w.period==='evening');
+    const vals = data.map(w=>w.value);
+    const avg = vals.length?(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1):'-';
+    c.innerHTML = `
+      <div style="padding:16px;text-align:center">
+        <p style="font-size:15px;margin-bottom:12px"><strong>${pk.replace('-','年')}月 总结</strong></p>
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-value">${m.length}</div><div class="stat-label">早晨记录</div></div>
+          <div class="stat-card"><div class="stat-value">${e.length}</div><div class="stat-label">晚上记录</div></div>
+          <div class="stat-card success"><div class="stat-value">${avg} kg</div><div class="stat-label">月均体重</div></div>
+          <div class="stat-card warning"><div class="stat-value">${data.length}</div><div class="stat-label">总记录数</div></div>
+        </div>
+      </div>
+      <hr style="border:none;border-top:1px solid var(--border);margin:8px 0">
+      ${sorted.map(w=>`<div class="weight-record"><span>${formatDate(w.date)}</span><span class="time-badge ${w.period==='morning'?'time-morning':'time-evening'}">${w.period==='morning'?'🌅 早':'🌙 晚'}</span><span style="font-weight:600">${w.value.toFixed(1)} kg</span></div>`).join('')}
+    `;
+  }
+}
+function deleteWeight(date,period) {
+  if (!confirm('确定删除？')) return;
+  state.weights = state.weights.filter(w=>!(w.date===date&&w.period===period));
+  saveState(); const pk = getPeriodKey(date);
+  renderWeightChart(pk); renderWeightStats(pk); renderWeightRecords(pk); renderMonthSelector(pk);
+  showToast('已删除');
+}
+
+// ============ MAOYANG ============
+function getMaoyangPeriods() { return Object.keys(state.maoyang.periods).sort((a,b)=>b.localeCompare(a)); }
+function renderMaoyangPage() {
+  const cur = getCurrentPeriodKey();
+  if (!state.currentPeriod || !state.maoyang.periods[state.currentPeriod]) state.currentPeriod = cur;
+  ensurePeriod(state.currentPeriod);
+  renderMaoyangTabs(); renderMaoyangTable(); renderMaoyangSummary();
+}
+function renderMaoyangTabs() {
+  const c = document.getElementById('maoyang-tabs');
+  const ps = getMaoyangPeriods(), cur = getCurrentPeriodKey();
+  if (!ps.includes(cur)) { ensurePeriod(cur); ps.unshift(cur); }
+  c.innerHTML = ps.map(p=>`<div class="period-tab ${p===state.currentPeriod?'active':''}" onclick="switchMaoyangPeriod('${p}')">${p.replace('-','年')}月</div>`).join('')+'<div class="period-tab-add" onclick="addMaoyangPeriod()" title="添加月份">+</div>';
+}
+function switchMaoyangPeriod(pk) { state.currentPeriod=pk; ensurePeriod(pk); renderMaoyangTabs(); renderMaoyangTable(); renderMaoyangSummary(); }
+function addMaoyangPeriod() {
+  const inp = prompt('输入月份 (格式: 2026-08):', getCurrentPeriodKey());
+  if (!inp) return;
+  if (!/^\d{4}-\d{2}$/.test(inp)) { showToast('格式错误'); return; }
+  state.currentPeriod = inp; ensurePeriod(inp); saveState();
+  renderMaoyangTabs(); renderMaoyangTable(); renderMaoyangSummary();
+}
+function renderMaoyangSummary() {
+  const data = state.maoyang.periods[state.currentPeriod]||[], c = document.getElementById('maoyang-summary');
+  const g = data.reduce((s,r)=>s+(parseFloat(r.shipping)||0),0);
+  const d = data.reduce((s,r)=>s+(parseFloat(r.cost)||0),0);
+  const i = data.reduce((s,r)=>s+(parseFloat(r.payment)||0),0);
+  const f = data.reduce((s,r)=>s+(parseFloat(r.settlement)||0),0);
+  const exp = g+d+i, bal = f-exp;
+  const profit = data.reduce((s,r)=>s+((parseFloat(r.settlement)||0)-(parseFloat(r.cost)||0)-(parseFloat(r.shipping)||0)-(parseFloat(r.payment)||0)),0);
+  c.innerHTML = `
+    <div class="stat-card"><div class="stat-value">${formatMoney(g)}</div><div class="stat-label">总运费</div></div>
+    <div class="stat-card"><div class="stat-value">${formatMoney(d)}</div><div class="stat-label">总本金</div></div>
+    <div class="stat-card"><div class="stat-value">${formatMoney(i)}</div><div class="stat-label">总打款</div></div>
+    <div class="stat-card warning"><div class="stat-value">${formatMoney(exp)}</div><div class="stat-label">总支出</div></div>
+    <div class="stat-card success"><div class="stat-value">${formatMoney(f)}</div><div class="stat-label">回款</div></div>
+    <div class="stat-card ${bal>=0?'success':'danger'}"><div class="stat-value">${formatMoney(bal)}</div><div class="stat-label">余额</div></div>
+    <div class="stat-card ${profit>=0?'success':'danger'}"><div class="stat-value">${formatMoney(profit)}</div><div class="stat-label">核查 (利润)</div></div>
+  `;
+}
+function renderMaoyangTable() {
+  const tbody = document.getElementById('maoyang-table-body'), empty = document.getElementById('maoyang-empty');
+  const title = document.getElementById('maoyang-table-title');
+  const data = state.maoyang.periods[state.currentPeriod]||[];
+  title.textContent = `${state.currentPeriod.replace('-','年')}月 数据`;
+  if (data.length===0) { tbody.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+  tbody.innerHTML = data.map((r,i)=>{
+    const profit = (parseFloat(r.settlement)||0)-(parseFloat(r.cost)||0)-(parseFloat(r.shipping)||0)-(parseFloat(r.payment)||0);
+    return `<tr>
+      <td>${escapeHtml(r.name||'-')}</td><td>${escapeHtml(r.item||'-')}</td><td>${formatDate(r.orderDate)}</td>
+      <td>${formatMoney(r.cost)}</td><td>${r.advance||'-'}</td><td>${formatMoney(r.settlement)}</td>
+      <td>${formatMoney(r.shipping)}</td><td>${escapeHtml(r.tracking||'-')}</td><td>${formatMoney(r.payment)}</td>
+      <td style="color:${profit>=0?'var(--success)':'var(--danger)'};font-weight:600">${formatMoney(profit)}</td>
+      <td>${formatDate(r.settleDate)}</td>
+      <td>
+        <button class="btn btn-outline btn-sm" onclick="editMaoyangRow(${i})">编辑</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteMaoyangRow(${i})">删除</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+function addMaoyangRow() { openMaoyangModal('添加记录',''); }
+function editMaoyangRow(i) { openMaoyangModal('编辑记录',i); }
+function openMaoyangModal(title, editId) {
+  document.getElementById('maoyang-modal-title').textContent = title;
+  document.getElementById('my-edit-id').value = editId;
+  const fields = ['my-name','my-item','my-order-date','my-cost','my-advance','my-settlement','my-shipping','my-tracking','my-payment','my-settle-date'];
+  fields.forEach(f => document.getElementById(f).value = '');
+  if (editId !== '') {
+    const r = state.maoyang.periods[state.currentPeriod][parseInt(editId)];
+    if (r) {
+      document.getElementById('my-name').value = r.name||'';
+      document.getElementById('my-item').value = r.item||'';
+      document.getElementById('my-order-date').value = r.orderDate||'';
+      document.getElementById('my-cost').value = r.cost||'';
+      document.getElementById('my-advance').value = r.advance||'';
+      document.getElementById('my-settlement').value = r.settlement||'';
+      document.getElementById('my-shipping').value = r.shipping||'';
+      document.getElementById('my-tracking').value = r.tracking||'';
+      document.getElementById('my-payment').value = r.payment||'';
+      document.getElementById('my-settle-date').value = r.settleDate||'';
+    }
+  }
+  document.getElementById('maoyang-modal').classList.add('show');
+}
+function closeMaoyangModal() { document.getElementById('maoyang-modal').classList.remove('show'); }
+function saveMaoyangRecord() {
+  const record = {
+    name: document.getElementById('my-name').value.trim(),
+    item: document.getElementById('my-item').value.trim(),
+    orderDate: document.getElementById('my-order-date').value,
+    cost: document.getElementById('my-cost').value,
+    advance: document.getElementById('my-advance').value,
+    settlement: document.getElementById('my-settlement').value,
+    shipping: document.getElementById('my-shipping').value,
+    tracking: document.getElementById('my-tracking').value.trim(),
+    payment: document.getElementById('my-payment').value,
+    settleDate: document.getElementById('my-settle-date').value
+  };
+  if (!record.item) { showToast('请输入物品名称'); return; }
+  const editId = document.getElementById('my-edit-id').value;
+  const period = state.maoyang.periods[state.currentPeriod];
+  if (editId !== '') { period[parseInt(editId)] = record; } else { period.push(record); }
+  saveState(); closeMaoyangModal();
+  renderMaoyangTable(); renderMaoyangSummary();
+  showToast(editId!==''?'已更新':'已添加');
+}
+function deleteMaoyangRow(i) {
+  if (!confirm('确定删除？')) return;
+  state.maoyang.periods[state.currentPeriod].splice(i,1);
+  saveState(); renderMaoyangTable(); renderMaoyangSummary(); showToast('已删除');
+}
+
+// ============ PHOTOGRAPHY ============
+// Curated photos from Chinese platforms (图虫/500px/小红书精选)
+const curatedPhotos = [
+  { id:'c1', title:'逆光人像——发丝金色轮廓光', cat:'portrait', tag:'人像', platform:'图虫', likes:8600,
+    img:'https://source.unsplash.com/featured/600x800/?portrait,golden-hour,silhouette',
+    gear:'Canon EOS R5 | RF 85mm f/1.2L', settings:'f/1.4, 1/1000s, ISO 100',
+    techniques:[
+      '日落前1小时逆光拍摄，阳光穿过发丝形成金色轮廓光，皮肤通透感拉满',
+      '85mm f/1.2 全开光圈，奶油般虚化让主体从背景中干净剥离',
+      '反光板银色面给面部补光，避免欠曝同时保留眼神光',
+      '模特微侧脸自然回眸，逆光勾勒下颚线和锁骨线条'
+    ]},
+  { id:'c2', title:'窗边柔光——氛围感人像写真', cat:'portrait', tag:'人像', platform:'小红书', likes:12300,
+    img:'https://source.unsplash.com/featured/600x800/?window-light,portrait,soft',
+    gear:'Sony A7M4 | FE 50mm f/1.2 GM', settings:'f/1.4, 1/320s, ISO 200',
+    techniques:[
+      '窗边自然光=天然柔光箱，光线均匀柔和无硬阴影',
+      '模特站窗边45度角，面部形成自然伦勃朗三角光',
+      '50mm标准焦段最接近人眼视角，画面亲切不做作',
+      '后期降对比度和饱和度制造空气感，肤色呈现高级象牙白'
+    ]},
+  { id:'c3', title:'光影人像——单灯戏剧感', cat:'portrait', tag:'人像', platform:'500px', likes:9500,
+    img:'https://source.unsplash.com/featured/600x800/?dramatic-light,portrait,shadow',
+    gear:'Nikon Z8 | NIKKOR Z 35mm f/1.4', settings:'f/1.8, 1/200s, ISO 400',
+    techniques:[
+      '低光环境+单一光源制造明暗对比，用光影裁剪人物轮廓',
+      '35mm环境人像焦段——环境即构图，人物与环境融为一体',
+      '故意欠曝1档让暗部更深，仅保留高光细节突出戏剧张力',
+      '后期局部提亮眼神光——眼睛是情绪窗口，必须锐利'
+    ]},
+  { id:'c4', title:'街拍人像——城市色彩碰撞', cat:'portrait', tag:'人像', platform:'小红书', likes:18700,
+    img:'https://source.unsplash.com/featured/600x800/?street-fashion,urban,colorful-wall',
+    gear:'Fujifilm X-T5 | XF 56mm f/1.2 R WR', settings:'f/2.0, 1/500s, ISO 250',
+    techniques:[
+      '城市街头=天然影棚，找色彩鲜艳的墙面或涂鸦当背景',
+      '56mm（等效85mm）APSC人像头，小巧不引人注意适合抓拍',
+      '让模特自然走动而非摆拍，连拍中选出最放松的姿态',
+      '富士Classic Chrome直出——淡雅色彩有质感，省去大量后期'
+    ]},
+  { id:'c5', title:'黑白肖像——质感与情绪', cat:'portrait', tag:'人像', platform:'视觉中国', likes:7200,
+    img:'https://source.unsplash.com/featured/600x800/?black-and-white,portrait,texture',
+    gear:'Leica SL2 | APO-Summicron-SL 90mm f/2', settings:'f/2.8, 1/400s, ISO 800',
+    techniques:[
+      '黑白去除色彩干扰，让纹理、光影、情绪成为主角',
+      '侧光或侧逆光是黑白人像最佳用光，最大化面部立体感',
+      '90mm中长焦压缩五官比例，保持足够拍摄距离不打扰被摄者',
+      '后期三大参数：对比度（层次）+清晰度（纹理）+颗粒（氛围）'
+    ]},
+  { id:'c6', title:'剪影人像——极简轮廓美', cat:'portrait', tag:'人像', platform:'图虫', likes:11300,
+    img:'https://source.unsplash.com/featured/600x800/?silhouette,doorway,dramatic',
+    gear:'Sony A7R5 | FE 135mm f/1.8 GM', settings:'f/2.0, 1/800s, ISO 160',
+    techniques:[
+      '模特站门口或窗边，利用室内外光线差制造高对比度剪影',
+      '135mm长焦压缩透视，让背景和人物视觉融合',
+      '对亮处（窗外）测光，故意让面部欠曝形成纯剪影效果',
+      '构图留足负空间（暗部），留给观众想象余地'
+    ]},
+  { id:'c7', title:'生活感写真——咖啡馆时光', cat:'portrait', tag:'人像', platform:'小红书', likes:25400,
+    img:'https://source.unsplash.com/featured/600x800/?cafe,cozy,reading',
+    gear:'Ricoh GR IIIx | 40mm f/2.8', settings:'f/2.8, 1/250s, ISO 800',
+    techniques:[
+      '咖啡馆=天然影棚——暖色灯光+木质桌面+大窗户漫射光',
+      'GR IIIx 40mm是"有态度的焦段"，比35mm更聚焦比50mm更多环境',
+      '利用前景（咖啡杯、绿植）增加画面层次和纵深感',
+      '拍生活感秘诀：让被摄者做自己的事，只在最佳瞬间轻声叫名字'
+    ]},
+  { id:'c8', title:'时尚质感——杂志级人像', cat:'portrait', tag:'人像', platform:'500px', likes:15800,
+    img:'https://source.unsplash.com/featured/600x800/?fashion,editorial,elegant',
+    gear:'Canon EOS R5 | RF 85mm f/1.2L DS', settings:'f/1.2, 1/640s, ISO 100',
+    techniques:[
+      'DS镀膜版85/1.2=焦外之王——光斑边缘柔化如梦境般过渡',
+      '纯色背景+极简构图，所有注意力集中在人物神态上',
+      '高调人像：+1EV曝光补偿让皮肤通透白皙',
+      '微耸肩+下颌微抬展现颈部线条——时尚人像经典姿态'
+    ]},
+  { id:'c9', title:'花海人像——春日氛围', cat:'portrait', tag:'人像', platform:'图虫', likes:21100,
+    img:'https://source.unsplash.com/featured/600x800/?flower-field,spring,wildflowers',
+    gear:'Sony A1 | FE 24-70mm f/2.8 GM II', settings:'f/4, 1/500s, ISO 200',
+    techniques:[
+      '环境人像中环境与人物同等重要——花海、草原、森林皆天然背景',
+      '24mm广角纳全景，人物放画面下1/3，上方留给壮阔天空',
+      '自然光拍人像黄金法则：阴天漫射光 > 晴天硬光（阴天=天然柔光箱）',
+      '服装选环境互补色——红花海穿白裙，绿草原穿红裙让主体跳出'
+    ]},
+  { id:'c10', title:'眼部特写——眼神的故事', cat:'portrait', tag:'人像', platform:'视觉中国', likes:6400,
+    img:'https://source.unsplash.com/featured/600x800/?eyes,close-up,expressive',
+    gear:'Nikon Z9 | NIKKOR Z 105mm f/1.4', settings:'f/1.6, 1/640s, ISO 320',
+    techniques:[
+      '特写核心=眼睛——焦点必须死死锁定离镜头最近那只眼',
+      '105mm f/1.4人像镜皇，全开光圈景深仅几厘米，对焦精度是生死线',
+      '单点AF-C+眼部追踪，半按快门锁定眼睛后轻微平移构图',
+      '面部纹理是故事——不过度磨皮，保留皮肤质感才是高级审美'
+    ]},
+  { id:'c11', title:'黄山云海日出——水墨意境', cat:'landscape', tag:'风光', platform:'500px', likes:32000,
+    img:'https://source.unsplash.com/featured/800x600/?mountain,mist,sunrise',
+    gear:'Canon EOS R5 | RF 24-70mm f/2.8L', settings:'f/8, 1/60s, ISO 200, 三脚架',
+    techniques:[
+      '日出黄金时刻拍摄，暖色阳光与冷调天空形成冷暖对比',
+      '黄山的云雾是最好的天然滤镜，层层叠叠如水墨画',
+      'f/8小光圈保证前景山石和远景云海全部清晰',
+      '等待阳光穿透云层瞬间，光线洒在云海上如仙境'
+    ]},
+  { id:'c12', title:'上海外滩——蓝调时刻', cat:'architecture', tag:'建筑', platform:'图虫', likes:19600,
+    img:'https://source.unsplash.com/featured/800x600/?cityscape,skyline,river',
+    gear:'Sony A7R5 | FE 16-35mm f/2.8 GM II', settings:'f/11, 20s, ISO 100, 三脚架',
+    techniques:[
+      '蓝调时刻（日落后20分钟）拍摄，天空呈现深邃靛蓝色',
+      '20秒长曝光让江面平滑如镜，建筑灯光形成璀璨倒影',
+      '16mm超广角收纳浦东天际线全貌，建筑群错落有致',
+      '使用三脚架+快门线避免任何抖动，长曝光画质是王道'
+    ]},
+  { id:'c13', title:'九寨沟秋色——五彩斑斓', cat:'landscape', tag:'风光', platform:'小红书', likes:28700,
+    img:'https://source.unsplash.com/featured/800x600/?autumn,lake,colorful-trees',
+    gear:'Nikon Z7 II | NIKKOR Z 24-70mm f/2.8 S', settings:'f/10, 1/30s, ISO 64, CPL偏光镜',
+    techniques:[
+      '10月深秋是最佳拍摄时间，湖水澄澈树叶五彩斑斓',
+      'CPL偏光镜消除水面反光，让水底沉木和钙华清晰可见',
+      'f/10小光圈保证从前景树叶到远景山峦全部清晰',
+      '寻找湖中倒影对称构图，上下镜像形成完美对称画面'
+    ]},
+  { id:'c14', title:'故宫角楼——经典对称', cat:'architecture', tag:'建筑', platform:'视觉中国', likes:24300,
+    img:'https://source.unsplash.com/featured/800x600/?palace,traditional-architecture,symmetry',
+    gear:'Hasselblad X2D 100C | XCD 35-75mm f/3.5-4.5', settings:'f/8, 1/125s, ISO 100',
+    techniques:[
+      '西北角楼是最经典机位，清晨或傍晚光线最佳',
+      '对称构图——角楼居中，护城河倒影形成上下镜像',
+      '等待无风时刻水面如镜，倒影与实景完美对称',
+      '中画幅1亿像素保留每一处琉璃瓦细节，放大后仍锐利'
+    ]},
+  { id:'c15', title:'微距昆虫——露珠上的蜻蜓', cat:'macro', tag:'微距', platform:'图虫', likes:9800,
+    img:'https://source.unsplash.com/featured/800x600/?dragonfly,macro,dewdrop',
+    gear:'Canon EOS R5 | RF 100mm f/2.8L Macro', settings:'f/5.6, 1/400s, ISO 800, 环形闪光灯',
+    techniques:[
+      '清晨露水未干时拍摄，蜻蜓翅膀上挂满露珠晶莹剔透',
+      '100mm微距+环形闪光灯保证充足光线和高速快门',
+      'f/5.6平衡景深与虚化——翅膀清晰背景如奶油融化',
+      '低速靠近避免惊扰，预对焦后等蜻蜓自然停驻再按快门'
+    ]},
+  { id:'c16', title:'桂林山水——渔舟唱晚', cat:'landscape', tag:'风光', platform:'500px', likes:35600,
+    img:'https://source.unsplash.com/featured/800x600/?karst-mountain,river,boat',
+    gear:'DJI Mavic 3 | Hasselblad 4/3 CMOS', settings:'f/2.8, 1/240s, ISO 100, 航拍',
+    techniques:[
+      '无人机俯拍漓江全景，喀斯特峰林如盆景般错落排列',
+      '日落时分暖金色光线洒在江面，渔翁竹筏成为画面点睛之笔',
+      '高空视角让山水比例更加震撼，展现"江作青罗带山如碧玉簪"',
+      '航拍注意光线角度，顺光拍色彩逆光拍层次各有千秋'
+    ]}
+];
+
+// Auto-update pool (simulating domestic platform content)
+const autoPhotoPool = [
+  { id:1, url:'https://source.unsplash.com/featured/600x800/?portrait,asian,soft', platform:'小红书', likesBase:12000 },
+  { id:2, url:'https://source.unsplash.com/featured/600x800/?nature,china,mountain', platform:'图虫', likesBase:8500 },
+  { id:3, url:'https://source.unsplash.com/featured/600x800/?city,night,lights', platform:'500px', likesBase:15000 },
+  { id:4, url:'https://source.unsplash.com/featured/600x800/?flower,garden,spring', platform:'小红书', likesBase:9800 },
+  { id:5, url:'https://source.unsplash.com/featured/600x800/?architecture,traditional,roof', platform:'视觉中国', likesBase:11200 },
+  { id:6, url:'https://source.unsplash.com/featured/600x800/?lake,reflection,sunset', platform:'图虫', likesBase:13300 },
+  { id:7, url:'https://source.unsplash.com/featured/600x800/?street,market,narrow', platform:'500px', likesBase:7600 },
+  { id:8, url:'https://source.unsplash.com/featured/600x800/?tea,ceremony,culture', platform:'小红书', likesBase:10500 },
+];
+const autoTechniquePool = [
+  ['对角线构图让画面更有动感','侧光角度突出面部立体感','大光圈虚化让主体从背景剥离','引导自然的肢体动作'],
+  ['窗边自然光是最好的人像光源','略微侧身避免正面呆板','中长焦避免广角畸变','眼神是关键——焦点必须在眼睛上'],
+  ['逆光制造金色轮廓光','降低曝光补偿让暗部更深邃','环境元素做前景增加层次','等待最自然的表情而非摆拍'],
+  ['简洁背景避免干扰主体','f/1.8大光圈制造梦幻虚化','侧逆光让发丝发光','后期增强暖色调营造氛围感'],
+  ['目光方向留白给画面呼吸感','低角度仰拍让人物更挺拔','树叶间隙光斑做前景','黑白转换关注对比度和纹理'],
+  ['黄金分割点放置主体','前中后景制造画面层次','寻找自然画框（门窗树枝）框住主体','等待恰到好处的光线角度'],
+  ['慢速快门制造动感','高ISO下寻找噪点的颗粒美感','色彩对比（互补色）制造视觉冲击','打破常规构图才有惊喜'],
+];
+const autoTitles = [
+  '人像写真·光影之间','城市剪影·暮色时分','花间人像·春意盎然',
+  '情绪捕捉·回眸一瞬','古建之美·岁月留痕','山水之间·意境悠远',
+  '街头瞬间·人间烟火','微光人像·氛围至上','庭院深深·光影斑驳',
+  '山巅之上·一览众山','江南水乡·烟雨朦胧','落日余晖·金色时刻'
+];
+const autoGears = [
+  'Sony A7M4 | FE 85mm f/1.4 GM','Canon EOS R6 II | RF 50mm f/1.2L',
+  'Nikon Z8 | NIKKOR Z 35mm f/1.4','Fujifilm X-T5 | XF 56mm f/1.2 R WR',
+  'Sony A7CR | FE 135mm f/1.8 GM','DJI Mavic 3 Pro | Hasselblad Camera'
+];
+const autoSettings = [
+  'f/1.4, 1/500s, ISO 100','f/1.8, 1/320s, ISO 200',
+  'f/2.0, 1/250s, ISO 400','f/2.8, 1/640s, ISO 160',
+  'f/5.6, 1/200s, ISO 800','f/8, 1/125s, ISO 200'
+];
+const autoPlatforms = ['图虫','小红书','500px','视觉中国'];
+const autoCats = ['portrait','portrait','portrait','landscape','street','architecture','macro'];
+const autoCatTags = { portrait:'人像', landscape:'风光', street:'街拍', architecture:'建筑', macro:'微距' };
+
+// User photos stored in localStorage
+function getUserPhotos() {
+  if (!state.userPhotos) state.userPhotos = [];
+  return state.userPhotos;
+}
+
+function getAllPhotos() {
+  const curated = curatedPhotos.map(p => ({ ...p, source:'curated' }));
+  const user = getUserPhotos().map(p => ({ ...p, source:'user' }));
+  return [...curated, ...user];
+}
+
+window.photoFilter = 'all';
+let nextUserId = Date.now();
+
+function renderPhotos() {
+  const grid = document.getElementById('photo-grid');
+  const all = getAllPhotos();
+  let filtered;
+  if (window.photoFilter === 'hot') {
+    filtered = [...all].filter(p => p.likes).sort((a,b) => (b.likes||0) - (a.likes||0)).slice(0, 20);
+  } else if (window.photoFilter === 'all') {
+    filtered = all;
+  } else {
+    filtered = all.filter(p => p.cat === window.photoFilter);
+  }
+  if (filtered.length === 0) {
+    grid.innerHTML = '<div class="empty-state"><p>暂无照片，点击"手动添加"或"自动更新"</p></div>';
+    return;
+  }
+  grid.innerHTML = filtered.map(p => `
+    <div class="photo-card" onclick="openPhotoDetail('${p.id}','${p.source||'curated'}')">
+      ${p.source==='user'?'<span class="photo-user-badge">我的</span>':''}
+      ${p.source==='user'?`<div class="photo-card-actions" onclick="event.stopPropagation()"><button class="btn-icon" onclick="deleteUserPhoto('${p.id}')" title="删除">🗑️</button></div>`:''}
+      <img src="${p.img}" alt="${p.title}" loading="lazy" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22300%22 height=%22200%22><rect fill=%22%23e2e8f0%22 width=%22300%22 height=%22200%22/><text x=%22150%22 y=%22110%22 text-anchor=%22middle%22 fill=%22%2394a3b8%22 font-size=%2214%22>图片加载失败</text></svg>'">
+      <div class="photo-card-body">
+        <div class="photo-card-title">${p.title}</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px">
+          <div style="display:flex;align-items:center;gap:6px">
+            <span class="photo-card-cat">📷 ${p.tag}</span>
+            ${p.platform?`<span class="photo-card-platform">${p.platform}</span>`:''}
+          </div>
+          ${p.likes?`<span class="photo-card-likes">❤️ ${p.likes>=10000?(p.likes/1000).toFixed(0)+'k':p.likes>=1000?(p.likes/1000).toFixed(1)+'k':p.likes}</span>`:''}
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function filterPhotos(cat) {
+  window.photoFilter = cat;
+  document.querySelectorAll('.photo-cat').forEach(b => b.classList.toggle('active', b.dataset.cat === cat));
+  renderPhotos();
+}
+
+function openPhotoDetail(id, source) {
+  let p;
+  if (source === 'user') {
+    p = getUserPhotos().find(x => x.id === id);
+  } else {
+    p = curatedPhotos.find(x => x.id === id);
+    if (!p) p = getUserPhotos().find(x => x.id === id);
+  }
+  if (!p) return;
+  const overlay = document.getElementById('photo-detail-overlay');
+  const content = document.getElementById('photo-detail-content');
+  content.innerHTML = `
+    <button class="photo-detail-close" onclick="closePhotoDetail()">✕</button>
+    <img src="${p.img}" alt="${p.title}" class="photo-detail-img" loading="lazy" onerror="this.style.display='none'">
+    <div class="photo-detail-body">
+      <div class="photo-detail-title">${p.title} ${p.source==='user'?'<span style="font-size:12px;background:var(--primary);color:#fff;padding:2px 8px;border-radius:8px;vertical-align:middle;margin-left:8px">我的</span>':''}</div>
+      <div class="photo-detail-meta">📷 ${p.tag} · ${p.gear}${p.platform?` · 来源：<strong>${p.platform}</strong>`:''}${p.likes?` · <span style="color:#ef4444">❤️ ${p.likes>=10000?(p.likes/1000).toFixed(0)+'k':p.likes>=1000?(p.likes/1000).toFixed(1)+'k':p.likes} 赞</span>`:''}</div>
+      <div class="technique-section">
+        <h4>💡 拍摄技巧分析</h4>
+        <ul class="technique-list">
+          ${p.techniques.map((t, i) => `<li><span class="technique-num">${i+1}</span>${t}</li>`).join('')}
+        </ul>
+      </div>
+      <div class="camera-settings">
+        <span>📷 ${p.gear}</span>
+        <span>⚙️ ${p.settings}</span>
+      </div>
+      ${p.source==='user'?`<div style="margin-top:16px;text-align:right"><button class="btn btn-danger btn-sm" onclick="deleteUserPhoto('${p.id}');closePhotoDetail()">🗑️ 删除此照片</button></div>`:''}
+    </div>
+  `;
+  overlay.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function closePhotoDetail() {
+  document.getElementById('photo-detail-overlay').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+// Manual add photo
+function openAddPhotoModal() { document.getElementById('photo-add-modal').classList.add('show'); }
+function closeAddPhotoModal() { document.getElementById('photo-add-modal').classList.remove('show'); }
+
+function addUserPhoto() {
+  const title = document.getElementById('pp-title').value.trim();
+  const cat = document.getElementById('pp-cat').value;
+  const img = document.getElementById('pp-img').value.trim();
+  const gear = document.getElementById('pp-gear').value.trim();
+  const settings = document.getElementById('pp-settings').value.trim();
+  const techRaw = document.getElementById('pp-techniques').value.trim();
+  const platform = document.getElementById('pp-platform').value;
+  const likes = parseInt(document.getElementById('pp-likes').value) || 0;
+  if (!title) { showToast('请输入照片标题'); return; }
+  if (!img) { showToast('请输入图片链接'); return; }
+  const techniques = techRaw ? techRaw.split('\n').map(l => l.replace(/^\d+[\.\、\s]+/,'').trim()).filter(Boolean) : ['暂无技巧说明'];
+  const photo = {
+    id: 'u' + (nextUserId++),
+    title, cat, tag: {portrait:'人像',landscape:'风光',street:'街拍',architecture:'建筑',macro:'微距'}[cat],
+    img, gear: gear || '未知设备', settings: settings || '未知参数', techniques,
+    platform: platform || '其他', likes: likes || 0
+  };
+  getUserPhotos().push(photo);
+  saveState();
+  closeAddPhotoModal();
+  document.getElementById('pp-title').value = '';
+  document.getElementById('pp-img').value = '';
+  document.getElementById('pp-gear').value = '';
+  document.getElementById('pp-settings').value = '';
+  document.getElementById('pp-techniques').value = '';
+  document.getElementById('pp-platform').value = '图虫';
+  document.getElementById('pp-likes').value = '';
+  renderPhotos();
+  showToast('照片已添加');
+}
+
+function deleteUserPhoto(id) {
+  if (!confirm('确定删除这张照片吗？')) return;
+  state.userPhotos = state.userPhotos.filter(p => p.id !== id);
+  saveState();
+  renderPhotos();
+  showToast('已删除');
+}
+
+// Auto update - simulate fetching from domestic platforms
+function autoUpdatePhotos() {
+  const btn = event.target;
+  btn.disabled = true;
+  btn.textContent = '⏳ 更新中...';
+  
+  setTimeout(() => {
+    const shuffled = [...autoPhotoPool].sort(() => Math.random() - 0.5);
+    const count = Math.floor(Math.random() * 4) + 3; // 3-6 new photos
+    const added = [];
+    
+    for (let i = 0; i < Math.min(count, shuffled.length); i++) {
+      const imgData = shuffled[i];
+      const techSet = autoTechniquePool[Math.floor(Math.random() * autoTechniquePool.length)];
+      const platform = imgData.platform || autoPlatforms[Math.floor(Math.random() * autoPlatforms.length)];
+      const likes = (imgData.likesBase || 8000) + Math.floor(Math.random() * 12000);
+      const cat = autoCats[Math.floor(Math.random() * autoCats.length)];
+      const tag = autoCatTags[cat];
+      
+      const photo = {
+        id: 'a' + (nextUserId++),
+        title: autoTitles[Math.floor(Math.random() * autoTitles.length)],
+        cat, tag,
+        img: imgData.url,
+        gear: autoGears[Math.floor(Math.random() * autoGears.length)],
+        settings: autoSettings[Math.floor(Math.random() * autoSettings.length)],
+        techniques: techSet,
+        platform, likes
+      };
+      getUserPhotos().push(photo);
+      added.push(`${photo.title} (${platform} ❤️${(likes/1000).toFixed(0)}k)`);
+    }
+    
+    saveState();
+    window.photoFilter = 'all';
+    document.querySelectorAll('.photo-cat').forEach(b => b.classList.toggle('active', b.dataset.cat === 'all'));
+    renderPhotos();
+    btn.disabled = false;
+    btn.textContent = '🔄 自动更新';
+    showToast(`已添加 ${added.length} 张精选照片`);
+  }, 800);
+}
+
+// ============ SYNC ============
+function openSyncPanel() { document.getElementById('sync-modal').classList.add('show'); }
+function closeSyncPanel() { document.getElementById('sync-modal').classList.remove('show'); }
+
+function exportData() {
+  const json = JSON.stringify({ todos:state.todos, weights:state.weights, maoyang:state.maoyang, userPhotos:state.userPhotos }, null, 2);
+  const blob = new Blob([json], { type:'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url;
+  a.download = `workbench-backup-${new Date().toISOString().slice(0,10)}.json`;
+  a.click(); URL.revokeObjectURL(url);
+  showToast('数据已导出');
+}
+
+function importData(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (!confirm('⚠️ 导入将覆盖当前所有数据，确定继续？')) { input.value = ''; return; }
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      state.todos = data.todos || [];
+      state.weights = data.weights || [];
+      state.maoyang = data.maoyang || { periods:{} };
+      saveState();
+      switchPage(state.currentPage);
+      showToast('数据已导入');
+    } catch(err) { showToast('文件格式错误'); }
+  };
+  reader.readAsText(file);
+}
+
+function generateSyncCode() {
+  const json = JSON.stringify({ todos:state.todos, weights:state.weights, maoyang:state.maoyang, userPhotos:state.userPhotos });
+  const code = btoa(unescape(encodeURIComponent(json)));
+  document.getElementById('sync-code-area').style.display = 'block';
+  document.getElementById('sync-code-text').textContent = code;
+  const qrDiv = document.getElementById('sync-qr');
+  qrDiv.innerHTML = '';
+  try {
+    new QRCode(qrDiv, { text: code, width: 180, height: 180, colorDark:'#0f172a', colorLight:'#ffffff' });
+  } catch(e) { qrDiv.innerHTML = '<p style="font-size:12px;color:var(--text-muted)">二维码生成失败，请直接复制同步码</p>'; }
+  showToast('同步码已生成');
+}
+
+function applySyncCode() {
+  const code = document.getElementById('sync-code-input').value.trim();
+  if (!code) { showToast('请输入同步码'); return; }
+  if (!confirm('⚠️ 应用同步码将覆盖当前所有数据，确定继续？')) return;
+  try {
+    const json = decodeURIComponent(escape(atob(code)));
+    const data = JSON.parse(json);
+    state.todos = data.todos || [];
+    state.weights = data.weights || [];
+    state.maoyang = data.maoyang || { periods:{} };
+    saveState();
+    switchPage(state.currentPage);
+    document.getElementById('sync-code-input').value = '';
+    showToast('同步成功');
+  } catch(err) { showToast('同步码无效'); }
+}
+
+// ============ INIT ============
+function init() {
+  loadState();
+  switchPage('news');
+  fetchNews();
+  updateBadges();
+  document.getElementById('main-content').addEventListener('click', (e) => {
+    if (window.innerWidth <= 768 && document.getElementById('sidebar').classList.contains('open')) closeSidebar();
+  });
+  // Swipe to close
+  let touchX = 0;
+  const sb = document.getElementById('sidebar');
+  sb.addEventListener('touchstart', e => { touchX = e.touches[0].clientX; }, { passive:true });
+  sb.addEventListener('touchmove', e => {
+    if (window.innerWidth > 768) return;
+    const diff = e.touches[0].clientX - touchX;
+    if (diff < 0) { sb.style.transform = `translateX(${diff}px)`; sb.style.transition = 'none'; }
+  }, { passive:true });
+  sb.addEventListener('touchend', e => {
+    if (window.innerWidth > 768) return;
+    sb.style.transition = '';
+    if ((e.changedTouches[0]?.clientX||0) - touchX < -60) closeSidebar();
+    else sb.style.transform = '';
+  });
+}
+init();
+</script>
+</body>
+</html>
