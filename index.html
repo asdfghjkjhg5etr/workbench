@@ -386,128 +386,6 @@ tr:hover td { background: #f8faff; }
 }
 .period-tab-add:hover { border-color: var(--primary); color: var(--primary); }
 
-/* ====== PHOTOGRAPHY ====== */
-.photo-categories {
-  display: flex; gap: 6px; margin-bottom: 20px; flex-wrap: wrap;
-}
-.photo-cat {
-  padding: 7px 18px; border-radius: 20px; border: 1.5px solid var(--border);
-  background: var(--card-bg); cursor: pointer; font-size: 13px;
-  transition: var(--transition); font-family: inherit; color: var(--text);
-}
-.photo-cat.active { background: var(--primary); color: #fff; border-color: var(--primary); }
-.photo-cat:hover:not(.active) { border-color: var(--primary); color: var(--primary); }
-.photo-grid {
-  column-count: 3; column-gap: 14px;
-}
-.photo-card {
-  break-inside: avoid; margin-bottom: 14px;
-  background: var(--card-bg); border-radius: var(--radius);
-  box-shadow: var(--shadow); border: 1px solid var(--border);
-  overflow: hidden; cursor: pointer; transition: var(--transition);
-}
-.photo-card:hover { box-shadow: var(--shadow-md); transform: translateY(-3px); }
-.photo-card img {
-  width: 100%; display: block;
-  background: #e2e8f0;
-  min-height: 160px;
-  object-fit: cover;
-}
-.photo-card-body { padding: 12px 14px; }
-.photo-card-title {
-  font-size: 14px; font-weight: 600; margin-bottom: 4px;
-  display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;
-}
-.photo-card-cat {
-  font-size: 11px; color: var(--text-muted);
-  display: flex; align-items: center; gap: 4px;
-}
-.photo-card-platform {
-  font-size: 10px; background: #f1f5f9; color: var(--text-light);
-  padding: 2px 8px; border-radius: 6px; font-weight: 600;
-}
-.photo-card-likes {
-  font-size: 10px; color: #ef4444; font-weight: 600;
-  display: flex; align-items: center; gap: 2px;
-}
-.photo-card-actions {
-  position: absolute; top: 8px; right: 8px;
-  display: flex; gap: 4px; opacity: 0; transition: var(--transition);
-}
-.photo-card:hover .photo-card-actions { opacity: 1; }
-.photo-card { position: relative; }
-.photo-user-badge {
-  position: absolute; top: 8px; left: 8px;
-  background: var(--primary); color: #fff;
-  font-size: 10px; padding: 3px 8px; border-radius: 10px;
-  font-weight: 600; z-index: 1;
-}
-/* Photo detail */
-.photo-detail-overlay {
-  display: flex; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(15,23,42,0.85); z-index: 300;
-  align-items: center; justify-content: center;
-  backdrop-filter: blur(8px);
-}
-.photo-detail {
-  background: var(--card-bg); border-radius: var(--radius);
-  width: 92%; max-width: 900px; max-height: 90vh;
-  overflow-y: auto; box-shadow: var(--shadow-lg);
-  animation: slideUp 0.3s ease; position: relative;
-}
-.photo-detail-img {
-  width: 100%; max-height: 500px; object-fit: contain;
-  background: #0f172a; display: block;
-}
-.photo-detail-body { padding: 24px; }
-.photo-detail-title { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
-.photo-detail-meta { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; }
-.technique-section { margin-bottom: 20px; }
-.technique-section h4 {
-  font-size: 15px; font-weight: 700; margin-bottom: 8px;
-  color: var(--primary); display: flex; align-items: center; gap: 6px;
-}
-.technique-list { list-style: none; }
-.technique-list li {
-  padding: 8px 0; border-bottom: 1px solid var(--border);
-  font-size: 14px; line-height: 1.7; display: flex; gap: 10px;
-}
-.technique-list li:last-child { border-bottom: none; }
-.technique-num {
-  width: 24px; height: 24px; min-width: 24px;
-  background: var(--primary-light); color: var(--primary);
-  border-radius: 50%; display: flex; align-items: center; justify-content: center;
-  font-size: 12px; font-weight: 700; margin-top: 2px;
-}
-.camera-settings {
-  background: #f8fafc; border-radius: var(--radius-sm);
-  padding: 12px 16px; margin-top: 12px;
-  font-size: 13px; color: var(--text-light);
-  display: flex; flex-wrap: wrap; gap: 16px;
-}
-.camera-settings span { display: flex; align-items: center; gap: 4px; }
-.photo-detail-close {
-  position: absolute; top: 12px; right: 12px; z-index: 10;
-  width: 36px; height: 36px; border-radius: 50%;
-  border: none; background: rgba(0,0,0,0.5); color: #fff;
-  cursor: pointer; font-size: 20px;
-  display: flex; align-items: center; justify-content: center;
-  transition: var(--transition);
-}
-.photo-detail-close:hover { background: rgba(0,0,0,0.8); }
-
-@media (max-width: 768px) {
-  .photo-grid { column-count: 2; column-gap: 10px; }
-  .photo-card { margin-bottom: 10px; }
-  .photo-detail { width: 96%; max-height: 95vh; }
-  .photo-detail-img { max-height: 300px; }
-  .photo-detail-body { padding: 16px; }
-  .photo-detail-title { font-size: 18px; }
-}
-@media (max-width: 400px) {
-  .photo-grid { column-count: 1; }
-}
-
 /* ====== SYNC MODAL ====== */
 .sync-section { margin-bottom: 20px; }
 .sync-section h4 { font-size: 15px; margin-bottom: 10px; color: var(--text); }
@@ -638,9 +516,6 @@ tr:hover td { background: #f8faff; }
     <div class="nav-item" data-page="maoyang" onclick="switchPage('maoyang')">
       <span class="nav-icon">🐑</span> 羊毛
     </div>
-    <div class="nav-item" data-page="photo" onclick="switchPage('photo')">
-      <span class="nav-icon">📷</span> 摄影
-    </div>
   </nav>
   <div class="sidebar-footer">
     <span>v2.0</span>
@@ -765,57 +640,6 @@ tr:hover td { background: #f8faff; }
 
 </main>
 
-<!-- ====== PHOTOGRAPHY PAGE ====== -->
-<div class="page" id="page-photo" style="display:none">
-  <div class="page-header">
-    <h2>📷 摄影</h2>
-    <p>精选图虫、500px、小红书等高赞佳作，学习拍摄技巧，提升审美</p>
-  </div>
-  <div class="photo-categories" id="photo-cats">
-    <button class="photo-cat active" data-cat="all" onclick="filterPhotos('all')">全部</button>
-    <button class="photo-cat" data-cat="portrait" onclick="filterPhotos('portrait')">👤 人像</button>
-    <button class="photo-cat" data-cat="landscape" onclick="filterPhotos('landscape')">🏔️ 风光</button>
-    <button class="photo-cat" data-cat="street" onclick="filterPhotos('street')">🚶 街拍</button>
-    <button class="photo-cat" data-cat="architecture" onclick="filterPhotos('architecture')">🏛️ 建筑</button>
-    <button class="photo-cat" data-cat="macro" onclick="filterPhotos('macro')">🔍 微距</button>
-    <button class="photo-cat" data-cat="hot" onclick="filterPhotos('hot')">🔥 高赞</button>
-  </div>
-  <div class="card" style="margin-bottom:16px;padding:12px 16px">
-    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
-      <span style="font-size:13px;color:var(--text-light)">💡 来源：图虫·500px·小红书 ｜ 点击照片查看拍摄技巧与参数</span>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn btn-primary btn-sm" onclick="openAddPhotoModal()">📷 手动添加</button>
-        <button class="btn btn-outline btn-sm" onclick="autoUpdatePhotos()">🔄 自动更新</button>
-      </div>
-    </div>
-  </div>
-  <div class="photo-grid" id="photo-grid"></div>
-</div>
-
-<!-- Add Photo Modal -->
-<div class="modal-overlay" id="photo-add-modal">
-  <div class="modal" style="max-width:560px">
-    <h3>📷 添加照片</h3>
-    <div class="form-group"><label>照片标题</label><input type="text" id="pp-title" placeholder="如：逆光人像剪影"></div>
-    <div class="form-group"><label>分类</label><select id="pp-cat"><option value="portrait">👤 人像</option><option value="landscape">🏔️ 风光</option><option value="street">🚶 街拍</option><option value="architecture">🏛️ 建筑</option><option value="macro">🔍 微距</option></select></div>
-    <div class="form-group"><label>图片链接</label><input type="url" id="pp-img" placeholder="https://...（粘贴图片URL）"></div>
-    <div class="form-group"><label>相机/镜头型号</label><input type="text" id="pp-gear" placeholder="如：Sony A7M4 | 85mm f/1.4"></div>
-    <div class="form-group"><label>参数设置</label><input type="text" id="pp-settings" placeholder="如：f/1.8, 1/500s, ISO 100"></div>
-    <div class="form-group"><label>拍摄技巧（每行一条）</label><textarea id="pp-techniques" rows="4" placeholder="1. 选择侧逆光拍摄，勾勒人物轮廓&#10;2. 85mm大光圈虚化背景&#10;3. 引导模特自然互动避免僵硬"></textarea></div>
-    <div class="form-group"><label>来源平台</label><select id="pp-platform"><option value="图虫">图虫</option><option value="500px">500px</option><option value="小红书">小红书</option><option value="视觉中国">视觉中国</option><option value="微博摄影">微博摄影</option><option value="其他">其他</option></select></div>
-    <div class="form-group"><label>点赞数</label><input type="number" id="pp-likes" placeholder="如：2300" min="0"></div>
-    <div class="modal-actions">
-      <button class="btn btn-outline" onclick="closeAddPhotoModal()">取消</button>
-      <button class="btn btn-primary" onclick="addUserPhoto()">添加</button>
-    </div>
-  </div>
-</div>
-
-<!-- Photo Detail Overlay -->
-<div id="photo-detail-overlay" class="photo-detail-overlay" style="display:none" onclick="if(event.target===this)closePhotoDetail()">
-  <div class="photo-detail" id="photo-detail-content"></div>
-</div>
-
 <!-- ====== SYNC MODAL ====== -->
 <div class="modal-overlay" id="sync-modal">
   <div class="modal" style="max-width:560px">
@@ -896,14 +720,12 @@ function loadState() {
       state.todos = parsed.todos || [];
       state.weights = parsed.weights || [];
       state.maoyang = parsed.maoyang || { periods: {} };
-      state.userPhotos = parsed.userPhotos || [];
     }
   } catch(e) {}
 }
 function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify({
     todos: state.todos, weights: state.weights, maoyang: state.maoyang,
-    userPhotos: state.userPhotos || []
   }));
 }
 
@@ -941,7 +763,6 @@ function switchPage(p) {
   if (p==='todo') renderTodos();
   if (p==='weight') renderWeightPage();
   if (p==='maoyang') renderMaoyangPage();
-  if (p==='photo') renderPhotos();
   if (p==='news' && !window.newsLoaded) fetchNews();
   updateBadges();
 }
@@ -1354,382 +1175,12 @@ function deleteMaoyangRow(i) {
   saveState(); renderMaoyangTable(); renderMaoyangSummary(); showToast('已删除');
 }
 
-// ============ PHOTOGRAPHY ============
-// Curated photos from Chinese platforms (图虫/500px/小红书精选)
-const curatedPhotos = [
-  { id:'c1', title:'逆光人像——发丝金色轮廓光', cat:'portrait', tag:'人像', platform:'图虫', likes:8600,
-    img:'https://source.unsplash.com/featured/600x800/?portrait,golden-hour,silhouette',
-    gear:'Canon EOS R5 | RF 85mm f/1.2L', settings:'f/1.4, 1/1000s, ISO 100',
-    techniques:[
-      '日落前1小时逆光拍摄，阳光穿过发丝形成金色轮廓光，皮肤通透感拉满',
-      '85mm f/1.2 全开光圈，奶油般虚化让主体从背景中干净剥离',
-      '反光板银色面给面部补光，避免欠曝同时保留眼神光',
-      '模特微侧脸自然回眸，逆光勾勒下颚线和锁骨线条'
-    ]},
-  { id:'c2', title:'窗边柔光——氛围感人像写真', cat:'portrait', tag:'人像', platform:'小红书', likes:12300,
-    img:'https://source.unsplash.com/featured/600x800/?window-light,portrait,soft',
-    gear:'Sony A7M4 | FE 50mm f/1.2 GM', settings:'f/1.4, 1/320s, ISO 200',
-    techniques:[
-      '窗边自然光=天然柔光箱，光线均匀柔和无硬阴影',
-      '模特站窗边45度角，面部形成自然伦勃朗三角光',
-      '50mm标准焦段最接近人眼视角，画面亲切不做作',
-      '后期降对比度和饱和度制造空气感，肤色呈现高级象牙白'
-    ]},
-  { id:'c3', title:'光影人像——单灯戏剧感', cat:'portrait', tag:'人像', platform:'500px', likes:9500,
-    img:'https://source.unsplash.com/featured/600x800/?dramatic-light,portrait,shadow',
-    gear:'Nikon Z8 | NIKKOR Z 35mm f/1.4', settings:'f/1.8, 1/200s, ISO 400',
-    techniques:[
-      '低光环境+单一光源制造明暗对比，用光影裁剪人物轮廓',
-      '35mm环境人像焦段——环境即构图，人物与环境融为一体',
-      '故意欠曝1档让暗部更深，仅保留高光细节突出戏剧张力',
-      '后期局部提亮眼神光——眼睛是情绪窗口，必须锐利'
-    ]},
-  { id:'c4', title:'街拍人像——城市色彩碰撞', cat:'portrait', tag:'人像', platform:'小红书', likes:18700,
-    img:'https://source.unsplash.com/featured/600x800/?street-fashion,urban,colorful-wall',
-    gear:'Fujifilm X-T5 | XF 56mm f/1.2 R WR', settings:'f/2.0, 1/500s, ISO 250',
-    techniques:[
-      '城市街头=天然影棚，找色彩鲜艳的墙面或涂鸦当背景',
-      '56mm（等效85mm）APSC人像头，小巧不引人注意适合抓拍',
-      '让模特自然走动而非摆拍，连拍中选出最放松的姿态',
-      '富士Classic Chrome直出——淡雅色彩有质感，省去大量后期'
-    ]},
-  { id:'c5', title:'黑白肖像——质感与情绪', cat:'portrait', tag:'人像', platform:'视觉中国', likes:7200,
-    img:'https://source.unsplash.com/featured/600x800/?black-and-white,portrait,texture',
-    gear:'Leica SL2 | APO-Summicron-SL 90mm f/2', settings:'f/2.8, 1/400s, ISO 800',
-    techniques:[
-      '黑白去除色彩干扰，让纹理、光影、情绪成为主角',
-      '侧光或侧逆光是黑白人像最佳用光，最大化面部立体感',
-      '90mm中长焦压缩五官比例，保持足够拍摄距离不打扰被摄者',
-      '后期三大参数：对比度（层次）+清晰度（纹理）+颗粒（氛围）'
-    ]},
-  { id:'c6', title:'剪影人像——极简轮廓美', cat:'portrait', tag:'人像', platform:'图虫', likes:11300,
-    img:'https://source.unsplash.com/featured/600x800/?silhouette,doorway,dramatic',
-    gear:'Sony A7R5 | FE 135mm f/1.8 GM', settings:'f/2.0, 1/800s, ISO 160',
-    techniques:[
-      '模特站门口或窗边，利用室内外光线差制造高对比度剪影',
-      '135mm长焦压缩透视，让背景和人物视觉融合',
-      '对亮处（窗外）测光，故意让面部欠曝形成纯剪影效果',
-      '构图留足负空间（暗部），留给观众想象余地'
-    ]},
-  { id:'c7', title:'生活感写真——咖啡馆时光', cat:'portrait', tag:'人像', platform:'小红书', likes:25400,
-    img:'https://source.unsplash.com/featured/600x800/?cafe,cozy,reading',
-    gear:'Ricoh GR IIIx | 40mm f/2.8', settings:'f/2.8, 1/250s, ISO 800',
-    techniques:[
-      '咖啡馆=天然影棚——暖色灯光+木质桌面+大窗户漫射光',
-      'GR IIIx 40mm是"有态度的焦段"，比35mm更聚焦比50mm更多环境',
-      '利用前景（咖啡杯、绿植）增加画面层次和纵深感',
-      '拍生活感秘诀：让被摄者做自己的事，只在最佳瞬间轻声叫名字'
-    ]},
-  { id:'c8', title:'时尚质感——杂志级人像', cat:'portrait', tag:'人像', platform:'500px', likes:15800,
-    img:'https://source.unsplash.com/featured/600x800/?fashion,editorial,elegant',
-    gear:'Canon EOS R5 | RF 85mm f/1.2L DS', settings:'f/1.2, 1/640s, ISO 100',
-    techniques:[
-      'DS镀膜版85/1.2=焦外之王——光斑边缘柔化如梦境般过渡',
-      '纯色背景+极简构图，所有注意力集中在人物神态上',
-      '高调人像：+1EV曝光补偿让皮肤通透白皙',
-      '微耸肩+下颌微抬展现颈部线条——时尚人像经典姿态'
-    ]},
-  { id:'c9', title:'花海人像——春日氛围', cat:'portrait', tag:'人像', platform:'图虫', likes:21100,
-    img:'https://source.unsplash.com/featured/600x800/?flower-field,spring,wildflowers',
-    gear:'Sony A1 | FE 24-70mm f/2.8 GM II', settings:'f/4, 1/500s, ISO 200',
-    techniques:[
-      '环境人像中环境与人物同等重要——花海、草原、森林皆天然背景',
-      '24mm广角纳全景，人物放画面下1/3，上方留给壮阔天空',
-      '自然光拍人像黄金法则：阴天漫射光 > 晴天硬光（阴天=天然柔光箱）',
-      '服装选环境互补色——红花海穿白裙，绿草原穿红裙让主体跳出'
-    ]},
-  { id:'c10', title:'眼部特写——眼神的故事', cat:'portrait', tag:'人像', platform:'视觉中国', likes:6400,
-    img:'https://source.unsplash.com/featured/600x800/?eyes,close-up,expressive',
-    gear:'Nikon Z9 | NIKKOR Z 105mm f/1.4', settings:'f/1.6, 1/640s, ISO 320',
-    techniques:[
-      '特写核心=眼睛——焦点必须死死锁定离镜头最近那只眼',
-      '105mm f/1.4人像镜皇，全开光圈景深仅几厘米，对焦精度是生死线',
-      '单点AF-C+眼部追踪，半按快门锁定眼睛后轻微平移构图',
-      '面部纹理是故事——不过度磨皮，保留皮肤质感才是高级审美'
-    ]},
-  { id:'c11', title:'黄山云海日出——水墨意境', cat:'landscape', tag:'风光', platform:'500px', likes:32000,
-    img:'https://source.unsplash.com/featured/800x600/?mountain,mist,sunrise',
-    gear:'Canon EOS R5 | RF 24-70mm f/2.8L', settings:'f/8, 1/60s, ISO 200, 三脚架',
-    techniques:[
-      '日出黄金时刻拍摄，暖色阳光与冷调天空形成冷暖对比',
-      '黄山的云雾是最好的天然滤镜，层层叠叠如水墨画',
-      'f/8小光圈保证前景山石和远景云海全部清晰',
-      '等待阳光穿透云层瞬间，光线洒在云海上如仙境'
-    ]},
-  { id:'c12', title:'上海外滩——蓝调时刻', cat:'architecture', tag:'建筑', platform:'图虫', likes:19600,
-    img:'https://source.unsplash.com/featured/800x600/?cityscape,skyline,river',
-    gear:'Sony A7R5 | FE 16-35mm f/2.8 GM II', settings:'f/11, 20s, ISO 100, 三脚架',
-    techniques:[
-      '蓝调时刻（日落后20分钟）拍摄，天空呈现深邃靛蓝色',
-      '20秒长曝光让江面平滑如镜，建筑灯光形成璀璨倒影',
-      '16mm超广角收纳浦东天际线全貌，建筑群错落有致',
-      '使用三脚架+快门线避免任何抖动，长曝光画质是王道'
-    ]},
-  { id:'c13', title:'九寨沟秋色——五彩斑斓', cat:'landscape', tag:'风光', platform:'小红书', likes:28700,
-    img:'https://source.unsplash.com/featured/800x600/?autumn,lake,colorful-trees',
-    gear:'Nikon Z7 II | NIKKOR Z 24-70mm f/2.8 S', settings:'f/10, 1/30s, ISO 64, CPL偏光镜',
-    techniques:[
-      '10月深秋是最佳拍摄时间，湖水澄澈树叶五彩斑斓',
-      'CPL偏光镜消除水面反光，让水底沉木和钙华清晰可见',
-      'f/10小光圈保证从前景树叶到远景山峦全部清晰',
-      '寻找湖中倒影对称构图，上下镜像形成完美对称画面'
-    ]},
-  { id:'c14', title:'故宫角楼——经典对称', cat:'architecture', tag:'建筑', platform:'视觉中国', likes:24300,
-    img:'https://source.unsplash.com/featured/800x600/?palace,traditional-architecture,symmetry',
-    gear:'Hasselblad X2D 100C | XCD 35-75mm f/3.5-4.5', settings:'f/8, 1/125s, ISO 100',
-    techniques:[
-      '西北角楼是最经典机位，清晨或傍晚光线最佳',
-      '对称构图——角楼居中，护城河倒影形成上下镜像',
-      '等待无风时刻水面如镜，倒影与实景完美对称',
-      '中画幅1亿像素保留每一处琉璃瓦细节，放大后仍锐利'
-    ]},
-  { id:'c15', title:'微距昆虫——露珠上的蜻蜓', cat:'macro', tag:'微距', platform:'图虫', likes:9800,
-    img:'https://source.unsplash.com/featured/800x600/?dragonfly,macro,dewdrop',
-    gear:'Canon EOS R5 | RF 100mm f/2.8L Macro', settings:'f/5.6, 1/400s, ISO 800, 环形闪光灯',
-    techniques:[
-      '清晨露水未干时拍摄，蜻蜓翅膀上挂满露珠晶莹剔透',
-      '100mm微距+环形闪光灯保证充足光线和高速快门',
-      'f/5.6平衡景深与虚化——翅膀清晰背景如奶油融化',
-      '低速靠近避免惊扰，预对焦后等蜻蜓自然停驻再按快门'
-    ]},
-  { id:'c16', title:'桂林山水——渔舟唱晚', cat:'landscape', tag:'风光', platform:'500px', likes:35600,
-    img:'https://source.unsplash.com/featured/800x600/?karst-mountain,river,boat',
-    gear:'DJI Mavic 3 | Hasselblad 4/3 CMOS', settings:'f/2.8, 1/240s, ISO 100, 航拍',
-    techniques:[
-      '无人机俯拍漓江全景，喀斯特峰林如盆景般错落排列',
-      '日落时分暖金色光线洒在江面，渔翁竹筏成为画面点睛之笔',
-      '高空视角让山水比例更加震撼，展现"江作青罗带山如碧玉簪"',
-      '航拍注意光线角度，顺光拍色彩逆光拍层次各有千秋'
-    ]}
-];
-
-// Auto-update pool (simulating domestic platform content)
-const autoPhotoPool = [
-  { id:1, url:'https://source.unsplash.com/featured/600x800/?portrait,asian,soft', platform:'小红书', likesBase:12000 },
-  { id:2, url:'https://source.unsplash.com/featured/600x800/?nature,china,mountain', platform:'图虫', likesBase:8500 },
-  { id:3, url:'https://source.unsplash.com/featured/600x800/?city,night,lights', platform:'500px', likesBase:15000 },
-  { id:4, url:'https://source.unsplash.com/featured/600x800/?flower,garden,spring', platform:'小红书', likesBase:9800 },
-  { id:5, url:'https://source.unsplash.com/featured/600x800/?architecture,traditional,roof', platform:'视觉中国', likesBase:11200 },
-  { id:6, url:'https://source.unsplash.com/featured/600x800/?lake,reflection,sunset', platform:'图虫', likesBase:13300 },
-  { id:7, url:'https://source.unsplash.com/featured/600x800/?street,market,narrow', platform:'500px', likesBase:7600 },
-  { id:8, url:'https://source.unsplash.com/featured/600x800/?tea,ceremony,culture', platform:'小红书', likesBase:10500 },
-];
-const autoTechniquePool = [
-  ['对角线构图让画面更有动感','侧光角度突出面部立体感','大光圈虚化让主体从背景剥离','引导自然的肢体动作'],
-  ['窗边自然光是最好的人像光源','略微侧身避免正面呆板','中长焦避免广角畸变','眼神是关键——焦点必须在眼睛上'],
-  ['逆光制造金色轮廓光','降低曝光补偿让暗部更深邃','环境元素做前景增加层次','等待最自然的表情而非摆拍'],
-  ['简洁背景避免干扰主体','f/1.8大光圈制造梦幻虚化','侧逆光让发丝发光','后期增强暖色调营造氛围感'],
-  ['目光方向留白给画面呼吸感','低角度仰拍让人物更挺拔','树叶间隙光斑做前景','黑白转换关注对比度和纹理'],
-  ['黄金分割点放置主体','前中后景制造画面层次','寻找自然画框（门窗树枝）框住主体','等待恰到好处的光线角度'],
-  ['慢速快门制造动感','高ISO下寻找噪点的颗粒美感','色彩对比（互补色）制造视觉冲击','打破常规构图才有惊喜'],
-];
-const autoTitles = [
-  '人像写真·光影之间','城市剪影·暮色时分','花间人像·春意盎然',
-  '情绪捕捉·回眸一瞬','古建之美·岁月留痕','山水之间·意境悠远',
-  '街头瞬间·人间烟火','微光人像·氛围至上','庭院深深·光影斑驳',
-  '山巅之上·一览众山','江南水乡·烟雨朦胧','落日余晖·金色时刻'
-];
-const autoGears = [
-  'Sony A7M4 | FE 85mm f/1.4 GM','Canon EOS R6 II | RF 50mm f/1.2L',
-  'Nikon Z8 | NIKKOR Z 35mm f/1.4','Fujifilm X-T5 | XF 56mm f/1.2 R WR',
-  'Sony A7CR | FE 135mm f/1.8 GM','DJI Mavic 3 Pro | Hasselblad Camera'
-];
-const autoSettings = [
-  'f/1.4, 1/500s, ISO 100','f/1.8, 1/320s, ISO 200',
-  'f/2.0, 1/250s, ISO 400','f/2.8, 1/640s, ISO 160',
-  'f/5.6, 1/200s, ISO 800','f/8, 1/125s, ISO 200'
-];
-const autoPlatforms = ['图虫','小红书','500px','视觉中国'];
-const autoCats = ['portrait','portrait','portrait','landscape','street','architecture','macro'];
-const autoCatTags = { portrait:'人像', landscape:'风光', street:'街拍', architecture:'建筑', macro:'微距' };
-
-// User photos stored in localStorage
-function getUserPhotos() {
-  if (!state.userPhotos) state.userPhotos = [];
-  return state.userPhotos;
-}
-
-function getAllPhotos() {
-  const curated = curatedPhotos.map(p => ({ ...p, source:'curated' }));
-  const user = getUserPhotos().map(p => ({ ...p, source:'user' }));
-  return [...curated, ...user];
-}
-
-window.photoFilter = 'all';
-let nextUserId = Date.now();
-
-function renderPhotos() {
-  const grid = document.getElementById('photo-grid');
-  const all = getAllPhotos();
-  let filtered;
-  if (window.photoFilter === 'hot') {
-    filtered = [...all].filter(p => p.likes).sort((a,b) => (b.likes||0) - (a.likes||0)).slice(0, 20);
-  } else if (window.photoFilter === 'all') {
-    filtered = all;
-  } else {
-    filtered = all.filter(p => p.cat === window.photoFilter);
-  }
-  if (filtered.length === 0) {
-    grid.innerHTML = '<div class="empty-state"><p>暂无照片，点击"手动添加"或"自动更新"</p></div>';
-    return;
-  }
-  grid.innerHTML = filtered.map(p => `
-    <div class="photo-card" onclick="openPhotoDetail('${p.id}','${p.source||'curated'}')">
-      ${p.source==='user'?'<span class="photo-user-badge">我的</span>':''}
-      ${p.source==='user'?`<div class="photo-card-actions" onclick="event.stopPropagation()"><button class="btn-icon" onclick="deleteUserPhoto('${p.id}')" title="删除">🗑️</button></div>`:''}
-      <img src="${p.img}" alt="${p.title}" loading="lazy" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22300%22 height=%22200%22><rect fill=%22%23e2e8f0%22 width=%22300%22 height=%22200%22/><text x=%22150%22 y=%22110%22 text-anchor=%22middle%22 fill=%22%2394a3b8%22 font-size=%2214%22>图片加载失败</text></svg>'">
-      <div class="photo-card-body">
-        <div class="photo-card-title">${p.title}</div>
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px">
-          <div style="display:flex;align-items:center;gap:6px">
-            <span class="photo-card-cat">📷 ${p.tag}</span>
-            ${p.platform?`<span class="photo-card-platform">${p.platform}</span>`:''}
-          </div>
-          ${p.likes?`<span class="photo-card-likes">❤️ ${p.likes>=10000?(p.likes/1000).toFixed(0)+'k':p.likes>=1000?(p.likes/1000).toFixed(1)+'k':p.likes}</span>`:''}
-        </div>
-      </div>
-    </div>
-  `).join('');
-}
-
-function filterPhotos(cat) {
-  window.photoFilter = cat;
-  document.querySelectorAll('.photo-cat').forEach(b => b.classList.toggle('active', b.dataset.cat === cat));
-  renderPhotos();
-}
-
-function openPhotoDetail(id, source) {
-  let p;
-  if (source === 'user') {
-    p = getUserPhotos().find(x => x.id === id);
-  } else {
-    p = curatedPhotos.find(x => x.id === id);
-    if (!p) p = getUserPhotos().find(x => x.id === id);
-  }
-  if (!p) return;
-  const overlay = document.getElementById('photo-detail-overlay');
-  const content = document.getElementById('photo-detail-content');
-  content.innerHTML = `
-    <button class="photo-detail-close" onclick="closePhotoDetail()">✕</button>
-    <img src="${p.img}" alt="${p.title}" class="photo-detail-img" loading="lazy" onerror="this.style.display='none'">
-    <div class="photo-detail-body">
-      <div class="photo-detail-title">${p.title} ${p.source==='user'?'<span style="font-size:12px;background:var(--primary);color:#fff;padding:2px 8px;border-radius:8px;vertical-align:middle;margin-left:8px">我的</span>':''}</div>
-      <div class="photo-detail-meta">📷 ${p.tag} · ${p.gear}${p.platform?` · 来源：<strong>${p.platform}</strong>`:''}${p.likes?` · <span style="color:#ef4444">❤️ ${p.likes>=10000?(p.likes/1000).toFixed(0)+'k':p.likes>=1000?(p.likes/1000).toFixed(1)+'k':p.likes} 赞</span>`:''}</div>
-      <div class="technique-section">
-        <h4>💡 拍摄技巧分析</h4>
-        <ul class="technique-list">
-          ${p.techniques.map((t, i) => `<li><span class="technique-num">${i+1}</span>${t}</li>`).join('')}
-        </ul>
-      </div>
-      <div class="camera-settings">
-        <span>📷 ${p.gear}</span>
-        <span>⚙️ ${p.settings}</span>
-      </div>
-      ${p.source==='user'?`<div style="margin-top:16px;text-align:right"><button class="btn btn-danger btn-sm" onclick="deleteUserPhoto('${p.id}');closePhotoDetail()">🗑️ 删除此照片</button></div>`:''}
-    </div>
-  `;
-  overlay.style.display = 'flex';
-  document.body.style.overflow = 'hidden';
-}
-
-function closePhotoDetail() {
-  document.getElementById('photo-detail-overlay').style.display = 'none';
-  document.body.style.overflow = '';
-}
-
-// Manual add photo
-function openAddPhotoModal() { document.getElementById('photo-add-modal').classList.add('show'); }
-function closeAddPhotoModal() { document.getElementById('photo-add-modal').classList.remove('show'); }
-
-function addUserPhoto() {
-  const title = document.getElementById('pp-title').value.trim();
-  const cat = document.getElementById('pp-cat').value;
-  const img = document.getElementById('pp-img').value.trim();
-  const gear = document.getElementById('pp-gear').value.trim();
-  const settings = document.getElementById('pp-settings').value.trim();
-  const techRaw = document.getElementById('pp-techniques').value.trim();
-  const platform = document.getElementById('pp-platform').value;
-  const likes = parseInt(document.getElementById('pp-likes').value) || 0;
-  if (!title) { showToast('请输入照片标题'); return; }
-  if (!img) { showToast('请输入图片链接'); return; }
-  const techniques = techRaw ? techRaw.split('\n').map(l => l.replace(/^\d+[\.\、\s]+/,'').trim()).filter(Boolean) : ['暂无技巧说明'];
-  const photo = {
-    id: 'u' + (nextUserId++),
-    title, cat, tag: {portrait:'人像',landscape:'风光',street:'街拍',architecture:'建筑',macro:'微距'}[cat],
-    img, gear: gear || '未知设备', settings: settings || '未知参数', techniques,
-    platform: platform || '其他', likes: likes || 0
-  };
-  getUserPhotos().push(photo);
-  saveState();
-  closeAddPhotoModal();
-  document.getElementById('pp-title').value = '';
-  document.getElementById('pp-img').value = '';
-  document.getElementById('pp-gear').value = '';
-  document.getElementById('pp-settings').value = '';
-  document.getElementById('pp-techniques').value = '';
-  document.getElementById('pp-platform').value = '图虫';
-  document.getElementById('pp-likes').value = '';
-  renderPhotos();
-  showToast('照片已添加');
-}
-
-function deleteUserPhoto(id) {
-  if (!confirm('确定删除这张照片吗？')) return;
-  state.userPhotos = state.userPhotos.filter(p => p.id !== id);
-  saveState();
-  renderPhotos();
-  showToast('已删除');
-}
-
-// Auto update - simulate fetching from domestic platforms
-function autoUpdatePhotos() {
-  const btn = event.target;
-  btn.disabled = true;
-  btn.textContent = '⏳ 更新中...';
-  
-  setTimeout(() => {
-    const shuffled = [...autoPhotoPool].sort(() => Math.random() - 0.5);
-    const count = Math.floor(Math.random() * 4) + 3; // 3-6 new photos
-    const added = [];
-    
-    for (let i = 0; i < Math.min(count, shuffled.length); i++) {
-      const imgData = shuffled[i];
-      const techSet = autoTechniquePool[Math.floor(Math.random() * autoTechniquePool.length)];
-      const platform = imgData.platform || autoPlatforms[Math.floor(Math.random() * autoPlatforms.length)];
-      const likes = (imgData.likesBase || 8000) + Math.floor(Math.random() * 12000);
-      const cat = autoCats[Math.floor(Math.random() * autoCats.length)];
-      const tag = autoCatTags[cat];
-      
-      const photo = {
-        id: 'a' + (nextUserId++),
-        title: autoTitles[Math.floor(Math.random() * autoTitles.length)],
-        cat, tag,
-        img: imgData.url,
-        gear: autoGears[Math.floor(Math.random() * autoGears.length)],
-        settings: autoSettings[Math.floor(Math.random() * autoSettings.length)],
-        techniques: techSet,
-        platform, likes
-      };
-      getUserPhotos().push(photo);
-      added.push(`${photo.title} (${platform} ❤️${(likes/1000).toFixed(0)}k)`);
-    }
-    
-    saveState();
-    window.photoFilter = 'all';
-    document.querySelectorAll('.photo-cat').forEach(b => b.classList.toggle('active', b.dataset.cat === 'all'));
-    renderPhotos();
-    btn.disabled = false;
-    btn.textContent = '🔄 自动更新';
-    showToast(`已添加 ${added.length} 张精选照片`);
-  }, 800);
-}
-
 // ============ SYNC ============
 function openSyncPanel() { document.getElementById('sync-modal').classList.add('show'); }
 function closeSyncPanel() { document.getElementById('sync-modal').classList.remove('show'); }
 
 function exportData() {
-  const json = JSON.stringify({ todos:state.todos, weights:state.weights, maoyang:state.maoyang, userPhotos:state.userPhotos }, null, 2);
+  const json = JSON.stringify({ todos:state.todos, weights:state.weights, maoyang:state.maoyang, }, null, 2);
   const blob = new Blob([json], { type:'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a'); a.href = url;
@@ -1758,7 +1209,7 @@ function importData(input) {
 }
 
 function generateSyncCode() {
-  const json = JSON.stringify({ todos:state.todos, weights:state.weights, maoyang:state.maoyang, userPhotos:state.userPhotos });
+  const json = JSON.stringify({ todos:state.todos, weights:state.weights, maoyang:state.maoyang, });
   const code = btoa(unescape(encodeURIComponent(json)));
   document.getElementById('sync-code-area').style.display = 'block';
   document.getElementById('sync-code-text').textContent = code;
