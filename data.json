@@ -3,21 +3,8 @@
   "weights": [],
   "maoyang": {
     "periods": {
-      "2026-08": [
-        {
-          "name": "李",
-          "item": "晴",
-          "orderDate": "2026-08-10",
-          "cost": "2",
-          "advance": "",
-          "settlement": "2",
-          "shipping": "2",
-          "tracking": "",
-          "payment": "3",
-          "settleDate": ""
-        }
-      ]
+      "2026-08": []
     }
   },
-  "syncedAt": "2026-08-06T15:16:51.644Z"
+  "syncedAt": "2026-08-06T15:17:07.930Z"
 }
