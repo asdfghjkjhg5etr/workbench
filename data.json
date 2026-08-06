@@ -15,7 +15,22 @@
     }
   ],
   "maoyang": {
-    "periods": {}
+    "periods": {
+      "2026-08": [
+        {
+          "name": "李",
+          "item": "晴",
+          "orderDate": "2026-08-10",
+          "cost": "2",
+          "advance": "",
+          "settlement": "2",
+          "shipping": "2",
+          "tracking": "",
+          "payment": "3",
+          "settleDate": ""
+        }
+      ]
+    }
   },
-  "syncedAt": "2026-08-06T15:11:11.656Z"
+  "syncedAt": "2026-08-06T15:11:46.849Z"
 }
