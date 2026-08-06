@@ -2,14 +2,34 @@
   "todos": [],
   "weights": [
     {
+      "date": "2026-08-05",
+      "period": "evening",
+      "value": 99,
+      "createdAt": "2026-08-06T15:11:06.524Z"
+    },
+    {
+      "date": "2026-08-06",
+      "period": "morning",
+      "value": 109,
+      "createdAt": "2026-08-06T15:23:36.848Z"
+    },
+    {
       "date": "2026-08-06",
       "period": "evening",
-      "value": 111,
-      "createdAt": "2026-08-06T15:25:47.339Z"
+      "value": 55,
+      "createdAt": "2026-08-06T15:04:10.884Z"
+    },
+    {
+      "date": "2026-08-06",
+      "period": "evening",
+      "value": 102,
+      "createdAt": "2026-08-06T15:23:30.361Z"
     }
   ],
   "maoyang": {
-    "periods": {}
+    "periods": {
+      "2026-08": []
+    }
   },
-  "syncedAt": "2026-08-06T15:25:50.339Z"
+  "syncedAt": "2026-08-06T15:26:06.552Z"
 }
