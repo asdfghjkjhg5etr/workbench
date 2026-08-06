@@ -388,6 +388,27 @@ tr:hover td { background: #f8faff; }
 }
 .weight-record:hover { background: #f8fafc; }
 
+/* ====== WEIGHT ADVICE ====== */
+.weight-advice { display: flex; flex-direction: column; gap: 10px; }
+.advice-card {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 14px 16px; border-radius: var(--radius-sm);
+  border-left: 4px solid; transition: var(--transition);
+}
+.advice-card:hover { transform: translateX(2px); }
+.advice-icon { font-size: 24px; flex-shrink: 0; line-height: 1.2; }
+.advice-content { flex: 1; }
+.advice-title { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+.advice-text { font-size: 13px; line-height: 1.6; color: var(--text-light); }
+.advice-success { background: #f0fdf4; border-color: var(--success); }
+.advice-success .advice-title { color: #15803d; }
+.advice-warning { background: #fffbeb; border-color: var(--warning); }
+.advice-warning .advice-title { color: #b45309; }
+.advice-info { background: #eff6ff; border-color: var(--info); }
+.advice-info .advice-title { color: #2563eb; }
+.advice-danger { background: #fef2f2; border-color: var(--danger); }
+.advice-danger .advice-title { color: #dc2626; }
+
 /* ====== MAOYANG ====== */
 .period-tabs { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
 .period-tab {
@@ -620,6 +641,10 @@ tr:hover td { background: #f8faff; }
     <div class="chart-container"><canvas id="weight-chart"></canvas></div>
   </div>
   <div class="stats-grid" id="weight-stats"></div>
+  <div class="card">
+    <div class="card-header"><h3>📋 健康建议</h3></div>
+    <div class="weight-advice" id="weight-advice"></div>
+  </div>
   <div class="card">
     <div class="card-header"><h3>历史记录</h3></div>
     <div class="weight-records" id="weight-records"></div>
@@ -985,7 +1010,7 @@ function deleteTodo(i) { if (confirm('确定删除？')) { state.todos.splice(i,
 function renderWeightPage() {
   const cp = getCurrentPeriodKey();
   setWeightDateToday(); autoDetectPeriod(); renderMonthSelector();
-  renderWeightChart(cp); renderWeightStats(cp); renderWeightRecords(cp);
+  renderWeightChart(cp); renderWeightStats(cp); renderWeightRecords(cp); renderWeightAdvice(cp);
 }
 function setWeightDateToday() {
   const n = new Date(); document.getElementById('weight-date').value = `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;
@@ -1001,7 +1026,7 @@ function addWeight() {
   state.weights.sort((a,b)=>new Date(a.date+(a.period==='morning'?'T08:00':'T20:00'))-new Date(b.date+(b.period==='morning'?'T08:00':'T20:00')));
   document.getElementById('weight-value').value=''; saveState();
   const pk = getPeriodKey(date);
-  renderMonthSelector(pk); renderWeightChart(pk); renderWeightStats(pk); renderWeightRecords(pk);
+  renderMonthSelector(pk); renderWeightChart(pk); renderWeightStats(pk); renderWeightRecords(pk); renderWeightAdvice(pk);
   showToast('已记录');
 }
 function getWeightMonthData(pk) {
@@ -1016,7 +1041,7 @@ function renderMonthSelector(active) {
   if (!active) active = getCurrentPeriodKey();
   c.innerHTML = sorted.map(p=>`<button class="${p===active?'active':''}" onclick="switchWeightMonth('${p}')">${p.replace('-','年')}月</button>`).join('');
 }
-function switchWeightMonth(pk) { renderMonthSelector(pk); renderWeightChart(pk); renderWeightStats(pk); renderWeightRecords(pk); }
+function switchWeightMonth(pk) { renderMonthSelector(pk); renderWeightChart(pk); renderWeightStats(pk); renderWeightRecords(pk); renderWeightAdvice(pk); }
 
 let weightChart = null;
 function renderWeightChart(pk) {
@@ -1101,8 +1126,155 @@ function deleteWeight(date,period) {
   if (!confirm('确定删除？')) return;
   state.weights = state.weights.filter(w=>!(w.date===date&&w.period===period));
   saveState(); const pk = getPeriodKey(date);
-  renderWeightChart(pk); renderWeightStats(pk); renderWeightRecords(pk); renderMonthSelector(pk);
+  renderWeightChart(pk); renderWeightStats(pk); renderWeightRecords(pk); renderMonthSelector(pk); renderWeightAdvice(pk);
   showToast('已删除');
+}
+
+// ====== 体重智能建议 ======
+function renderWeightAdvice(pk) {
+  const data = getWeightMonthData(pk);
+  const c = document.getElementById('weight-advice');
+  if (!c) return;
+
+  if (data.length === 0) {
+    c.innerHTML = `
+      <div class="advice-card advice-info">
+        <div class="advice-icon">💡</div>
+        <div class="advice-content">
+          <div class="advice-title">开始记录你的体重</div>
+          <div class="advice-text">坚持每天早晚各记录一次，连续记录几天后就能看到趋势，这里会自动为你生成个性化的健康建议和鼓励。</div>
+        </div>
+      </div>`;
+    return;
+  }
+
+  if (data.length === 1) {
+    c.innerHTML = `
+      <div class="advice-card advice-info">
+        <div class="advice-icon">👋</div>
+        <div class="advice-content">
+          <div class="advice-title">第一步已完成！</div>
+          <div class="advice-text">已记录 ${data.length} 条数据，再多记几天就能分析体重趋势了，加油！</div>
+        </div>
+      </div>`;
+    return;
+  }
+
+  // 按时间排序
+  const sorted = [...data].sort((a,b) => new Date(a.date + (a.period==='morning'?'T08:00':'T20:00')) - new Date(b.date + (b.period==='morning'?'T08:00':'T20:00')));
+  const latest = sorted[sorted.length - 1];
+  const first = sorted[0];
+  const totalChange = latest.value - first.value;
+
+  // 近7天 vs 前7天
+  const now = new Date();
+  const sevenDaysAgo = new Date(now.getTime() - 7 * 86400000);
+  const fourteenDaysAgo = new Date(now.getTime() - 14 * 86400000);
+  const recent7 = sorted.filter(w => new Date(w.date) >= sevenDaysAgo);
+  const prev7 = sorted.filter(w => new Date(w.date) >= fourteenDaysAgo && new Date(w.date) < sevenDaysAgo);
+
+  // 记录坚持度
+  const [y, m] = pk.split('-').map(Number);
+  const daysInMonth = new Date(y, m, 0).getDate();
+  const today = new Date();
+  const isCurrentMonth = today.getFullYear() === y && today.getMonth() + 1 === m;
+  const elapsedDays = isCurrentMonth ? Math.max(1, today.getDate()) : daysInMonth;
+  const recordedDates = new Set(data.map(w => w.date));
+  const consistency = recordedDates.size / elapsedDays;
+
+  // 早晚差异
+  const morningVals = data.filter(w => w.period === 'morning').map(w => w.value);
+  const eveningVals = data.filter(w => w.period === 'evening').map(w => w.value);
+  const avgMorning = morningVals.length ? morningVals.reduce((a,b)=>a+b,0) / morningVals.length : null;
+  const avgEvening = eveningVals.length ? eveningVals.reduce((a,b)=>a+b,0) / eveningVals.length : null;
+
+  // 波动范围
+  const vals = data.map(w => w.value);
+  const range = Math.max(...vals) - Math.min(...vals);
+
+  const advices = [];
+
+  // 1. 周趋势分析
+  if (recent7.length >= 2 && prev7.length >= 2) {
+    const recentAvg = recent7.reduce((s,w)=>s+w.value, 0) / recent7.length;
+    const prevAvg = prev7.reduce((s,w)=>s+w.value, 0) / prev7.length;
+    const weekChange = recentAvg - prevAvg;
+
+    if (Math.abs(weekChange) < 0.3) {
+      advices.push({ type:'success', icon:'🎯', title:'体重很稳定', text:`近两周体重变化仅 ${Math.abs(weekChange).toFixed(1)}kg，保持得不错！规律的作息和饮食是关键，继续坚持下去。` });
+    } else if (weekChange < -0.5 && weekChange >= -1.0) {
+      advices.push({ type:'success', icon:'📉', title:'稳步下降，节奏完美', text:`本周体重下降 ${Math.abs(weekChange).toFixed(1)}kg，每周减 0.5-1kg 是最健康的速度，不容易反弹。你做得非常好，继续保持！` });
+    } else if (weekChange < -1.0 && weekChange >= -1.5) {
+      advices.push({ type:'success', icon:'🔥', title:'下降明显，注意节奏', text:`本周下降 ${Math.abs(weekChange).toFixed(1)}kg，效果不错！但建议关注营养均衡，保证蛋白质摄入，配合适量运动效果更佳。` });
+    } else if (weekChange < -1.5) {
+      advices.push({ type:'warning', icon:'⚠️', title:'下降偏快，注意身体', text:`本周下降 ${Math.abs(weekChange).toFixed(1)}kg，速度偏快。快速减重可能导致肌肉流失和代谢下降，建议适当增加营养摄入，循序渐进。` });
+    } else if (weekChange > 0.5 && weekChange <= 1.0) {
+      advices.push({ type:'info', icon:'📈', title:'略有上升', text:`本周上升 ${weekChange.toFixed(1)}kg，小幅波动很正常，可能与饮食、水分或作息有关。不用太焦虑，留意一下近期饮食就好。` });
+    } else if (weekChange > 1.0) {
+      advices.push({ type:'warning', icon:'🍽️', title:'上升较快，留意一下', text:`本周上升 ${weekChange.toFixed(1)}kg，建议回顾近期饮食和运动情况，适当调整即可，不必有压力。` });
+    }
+  }
+
+  // 2. 月度总变化
+  if (Math.abs(totalChange) >= 0.3) {
+    if (totalChange < 0) {
+      advices.push({ type:'success', icon:'🏆', title:`本月减重 ${Math.abs(totalChange).toFixed(1)}kg`, text:`从月初 ${first.value.toFixed(1)}kg 到最新 ${latest.value.toFixed(1)}kg，取得了实实在在的进展！坚持的力量很强大。` });
+    } else {
+      advices.push({ type:'info', icon:'📊', title:`本月增重 ${totalChange.toFixed(1)}kg`, text:`从月初 ${first.value.toFixed(1)}kg 到最新 ${latest.value.toFixed(1)}kg。如果是有意增重，方向不错；如果在意体重，可以关注下饮食结构。` });
+    }
+  } else if (sorted.length >= 5) {
+    advices.push({ type:'success', icon:'⚖️', title:'体重保持稳定', text:`本月体重基本持平，波动不超过 0.3kg。说明你的生活习惯比较稳定，这本身就是一种健康状态。` });
+  }
+
+  // 3. 记录坚持度
+  const consistencyPct = Math.round(consistency * 100);
+  if (consistency >= 0.8 && recordedDates.size >= 10) {
+    advices.push({ type:'success', icon:'🌟', title:'记录习惯超棒！', text:`本月已记录 ${recordedDates.size} 天，坚持率 ${consistencyPct}%。自律的人才自由，这份坚持本身就是一种了不起的品质！` });
+  } else if (consistency >= 0.5) {
+    advices.push({ type:'info', icon:'📝', title:'继续保持记录', text:`本月已记录 ${recordedDates.size} 天，坚持率 ${consistencyPct}%。再多记几天数据就更完整了，建议每天早晚各称一次。` });
+  } else {
+    advices.push({ type:'info', icon:'📌', title:'试试每天记录', text:`本月仅记录 ${recordedDates.size} 天，坚持率 ${consistencyPct}%。数据越连续，建议越精准。定个小目标：连续记录7天看看效果！` });
+  }
+
+  // 4. 早晚差异
+  if (avgMorning !== null && avgEvening !== null) {
+    const diff = avgEvening - avgMorning;
+    if (diff > 2.0) {
+      advices.push({ type:'warning', icon:'🌙', title:'早晚差异偏大', text:`平均早晚差 ${diff.toFixed(1)}kg，晚餐可能吃得偏多。建议晚餐七分饱、睡前2小时不进食，早上空腹称重更准确。` });
+    } else if (diff > 0) {
+      advices.push({ type:'success', icon:'✨', title:'早晚差异健康', text:`平均早晚差 ${diff.toFixed(1)}kg，在正常范围(0.5-2kg)内，饮食节奏很好！` });
+    }
+  }
+
+  // 5. 波动提醒
+  if (range > 3.0 && data.length >= 6) {
+    advices.push({ type:'warning', icon:'🌊', title:'体重波动较大', text:`本月体重波动达 ${range.toFixed(1)}kg（${Math.min(...vals).toFixed(1)}~${Math.max(...vals).toFixed(1)}kg），可能与饮食、睡眠或水分有关。建议保持规律作息，减少暴饮暴食。` });
+  }
+
+  // 6. 连续记录鼓励
+  const sortedDates = [...recordedDates].sort();
+  let maxStreak = 1, curStreak = 1;
+  for (let i = 1; i < sortedDates.length; i++) {
+    const prev = new Date(sortedDates[i-1]), cur = new Date(sortedDates[i]);
+    const gap = (cur - prev) / 86400000;
+    if (gap <= 1.5) { curStreak++; maxStreak = Math.max(maxStreak, curStreak); }
+    else curStreak = 1;
+  }
+  if (maxStreak >= 7) {
+    advices.push({ type:'success', icon:'🔥', title:`连续记录 ${maxStreak} 天！`, text:`连续记录是养成习惯的关键。你已经坚持了 ${maxStreak} 天，非常棒！继续保持，让健康成为生活的一部分。` });
+  } else if (maxStreak >= 3) {
+    advices.push({ type:'success', icon:'👏', title:`连续记录 ${maxStreak} 天`, text:`已经连续记录 ${maxStreak} 天了，好的开始！坚持到7天就能解锁更完整的趋势分析。` });
+  }
+
+  c.innerHTML = advices.map(a => `
+    <div class="advice-card advice-${a.type}">
+      <div class="advice-icon">${a.icon}</div>
+      <div class="advice-content">
+        <div class="advice-title">${a.title}</div>
+        <div class="advice-text">${a.text}</div>
+      </div>
+    </div>
+  `).join('');
 }
 
 // ============ MAOYANG ============
