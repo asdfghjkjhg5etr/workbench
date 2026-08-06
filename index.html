@@ -114,6 +114,23 @@ body {
   display: flex; align-items: center; gap: 4px;
 }
 .sync-btn:hover { background: rgba(99,102,241,0.25); color: #c7d2fe; }
+.sync-status {
+  display: flex; align-items: center; gap: 6px; font-size: 11px;
+  color: var(--sidebar-text); margin-top: 6px;
+}
+.sync-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+  background: #64748b; transition: background 0.3s;
+}
+.sync-dot.synced { background: #22c55e; box-shadow: 0 0 6px rgba(34,197,94,0.4); }
+.sync-dot.syncing { background: #f59e0b; animation: pulse 1s infinite; }
+.sync-dot.error { background: #ef4444; }
+@keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+.cloud-token-hint {
+  font-size: 12px; color: var(--text-muted); margin-top: 6px;
+  background: #f8fafc; padding: 8px 12px; border-radius: 8px; line-height: 1.6;
+}
+.cloud-token-hint a { color: var(--primary); word-break: break-all; }
 
 /* Overlay */
 .overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); z-index: 99; -webkit-tap-highlight-color: transparent; }
@@ -517,9 +534,15 @@ tr:hover td { background: #f8faff; }
       <span class="nav-icon">🐑</span> 羊毛
     </div>
   </nav>
-  <div class="sidebar-footer">
-    <span>v2.0</span>
-    <button class="sync-btn" onclick="openSyncPanel()">🔄 同步数据</button>
+  <div class="sidebar-footer" style="flex-direction:column;align-items:flex-start;gap:4px">
+    <div style="display:flex;justify-content:space-between;width:100%;align-items:center">
+      <span>v2.1</span>
+      <button class="sync-btn" onclick="openSyncPanel()">🔄 同步</button>
+    </div>
+    <div class="sync-status" id="sync-status-bar">
+      <span class="sync-dot" id="sync-dot"></span>
+      <span id="sync-status-text">等待同步</span>
+    </div>
   </div>
 </aside>
 
@@ -666,6 +689,27 @@ tr:hover td { background: #f8faff; }
         <input type="text" id="sync-code-input" placeholder="粘贴同步码..." style="margin-bottom:6px">
         <button class="btn btn-success btn-sm" onclick="applySyncCode()">应用同步码</button>
       </div>
+    </div>
+    <div class="sync-section">
+      <h4>☁️ 云端自动同步</h4>
+      <p>数据自动同步到 GitHub，多设备实时共享。读取无需 Token，写入需要配置。</p>
+      <div class="form-group">
+        <label>GitHub Personal Access Token</label>
+        <input type="password" id="gh-token-input" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" style="font-family:monospace;font-size:13px">
+      </div>
+      <div class="cloud-token-hint">
+        如何获取 Token：<br>
+        1. 打开 <a href="https://github.com/settings/tokens?type=beta" target="_blank">GitHub Token 设置</a><br>
+        2. 点 "Generate new token" → 选 <b>Fine-grained token</b><br>
+        3. Repository access 选 <b>Only select repositories</b> → 搜 <b>workbench</b><br>
+        4. Permissions → Contents → <b>Read and write</b><br>
+        5. 生成后粘贴上方，点保存
+      </div>
+      <div style="margin-top:10px;display:flex;gap:8px">
+        <button class="btn btn-primary btn-sm" onclick="saveGhToken()">💾 保存 Token</button>
+        <button class="btn btn-outline btn-sm" onclick="syncNow()" id="sync-now-btn">🔄 立即同步</button>
+      </div>
+      <p style="font-size:12px;color:var(--text-muted);margin-top:8px" id="cloud-sync-info">未配置云端同步</p>
     </div>
     <div class="modal-actions">
       <button class="btn btn-outline" onclick="closeSyncPanel()">关闭</button>
@@ -1238,12 +1282,255 @@ function applySyncCode() {
   } catch(err) { showToast('同步码无效'); }
 }
 
+// ============ CLOUD SYNC (GitHub) ============
+const GH_OWNER = 'asdfghjkjhg5etr';
+const GH_REPO = 'workbench';
+const GH_FILE = 'data.json';
+const GH_API = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_FILE}`;
+const SYNC_DEBOUNCE = 3000;
+const PULL_INTERVAL = 300000;
+
+let _syncTimer = null;
+let _lastSyncSha = null;
+let _lastLocalHash = '';
+let _cloudEnabled = false;
+
+function getGhToken() {
+  try { return atob(localStorage.getItem('wb_gh_token') || ''); } catch(e) { return ''; }
+}
+function saveGhToken() {
+  const v = document.getElementById('gh-token-input').value.trim();
+  if (!v) { showToast('请输入 Token'); return; }
+  localStorage.setItem('wb_gh_token', btoa(v));
+  _cloudEnabled = true;
+  showToast('Token 已保存，开始云端同步');
+  document.getElementById('cloud-sync-info').textContent = '✅ 云端同步已启用';
+  setSyncStatus('syncing', '连接中...');
+  syncNow();
+}
+function setSyncStatus(cls, text) {
+  const d = document.getElementById('sync-dot');
+  const t = document.getElementById('sync-status-text');
+  if (d) { d.className = 'sync-dot ' + cls; }
+  if (t) t.textContent = text;
+}
+
+async function ghFetch() {
+  const headers = {};
+  const token = getGhToken();
+  if (token) headers['Authorization'] = 'Bearer ' + token;
+  try {
+    const resp = await fetch(GH_API, { headers, signal: AbortSignal.timeout(8000) });
+    if (!resp.ok) return null;
+    const data = await resp.json();
+    if (!data.content) return null;
+    _lastSyncSha = data.sha;
+    return JSON.parse(decodeURIComponent(escape(atob(data.content.replace(/\s/g,'')))));
+  } catch(e) { return null; }
+}
+
+async function ghPush(content) {
+  const token = getGhToken();
+  if (!token) return false;
+  try {
+    const body = {
+      message: '🌐 云端同步 ' + new Date().toISOString().slice(0,19),
+      content: btoa(unescape(encodeURIComponent(JSON.stringify(content, null, 2)))),
+      branch: 'main'
+    };
+    if (_lastSyncSha) body.sha = _lastSyncSha;
+    const resp = await fetch(GH_API, {
+      method: 'PUT',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(10000)
+    });
+    if (!resp.ok) {
+      if (resp.status === 409) {
+        // Conflict: remote changed, pull first
+        _lastSyncSha = null;
+        return 'conflict';
+      }
+      return false;
+    }
+    const data = await resp.json();
+    _lastSyncSha = data.content.sha;
+    return true;
+  } catch(e) { return false; }
+}
+
+function getLocalHash() {
+  return btoa(unescape(encodeURIComponent(JSON.stringify({
+    todos: state.todos, weights: state.weights, maoyang: state.maoyang
+  })))).slice(0, 50);
+}
+
+function getCloudPayload() {
+  return {
+    todos: state.todos,
+    weights: state.weights,
+    maoyang: state.maoyang,
+    syncedAt: new Date().toISOString()
+  };
+}
+
+async function pushToCloud() {
+  if (!_cloudEnabled) return;
+  setSyncStatus('syncing', '上传中...');
+  const payload = getCloudPayload();
+  const result = await ghPush(payload);
+  if (result === 'conflict') {
+    // Remote changed while we were away, pull and merge
+    const remote = await ghFetch();
+    if (remote) {
+      mergeRemote(remote);
+      // Retry push
+      const retryResult = await ghPush(getCloudPayload());
+      if (retryResult === true) {
+        _lastLocalHash = getLocalHash(); setSyncStatus('synced', '已同步');
+        return;
+      }
+    }
+    setSyncStatus('error', '冲突，请手动同步');
+    return;
+  }
+  if (result === true) {
+    _lastLocalHash = getLocalHash();
+    setSyncStatus('synced', '已同步');
+  } else {
+    setSyncStatus('error', '上传失败');
+  }
+}
+
+function mergeRemote(remote) {
+  if (!remote) return;
+  // Simple merge: take remote data if it exists
+  if (remote.todos && remote.todos.length > 0) state.todos = remote.todos;
+  if (remote.weights && remote.weights.length > 0) state.weights = remote.weights;
+  if (remote.maoyang) state.maoyang = remote.maoyang;
+  saveState();
+  switchPage(state.currentPage);
+}
+
+async function pullFromCloud() {
+  const remote = await ghFetch();
+  if (!remote) {
+    if (_cloudEnabled) setSyncStatus('error', '拉取失败');
+    return;
+  }
+  const rHash = btoa(unescape(encodeURIComponent(JSON.stringify({
+    todos: remote.todos, weights: remote.weights, maoyang: remote.maoyang
+  })))).slice(0, 50);
+  if (rHash !== _lastLocalHash) {
+    // Remote data is different
+    if (remote.syncedAt) {
+      mergeRemote(remote);
+      _lastLocalHash = rHash;
+      setSyncStatus('synced', '已同步');
+      showToast('已从云端加载最新数据');
+    } else {
+      // Remote has no syncedAt, might be older format, skip
+      setSyncStatus('synced', '云端无数据');
+    }
+  } else {
+    setSyncStatus('synced', '已同步');
+  }
+  _lastLocalHash = rHash;
+}
+
+async function syncNow() {
+  const token = getGhToken();
+  if (!token) {
+    // Read-only mode: try to pull
+    const remote = await ghFetch();
+    if (remote && remote.syncedAt) {
+      mergeRemote(remote);
+      _lastLocalHash = getLocalHash();
+      setSyncStatus('synced', '已加载云端数据');
+      showToast('已从云端加载数据（只读模式）');
+    } else {
+      setSyncStatus('synced', '云端暂无数据');
+    }
+    return;
+  }
+  _cloudEnabled = true;
+  setSyncStatus('syncing', '同步中...');
+  // Pull first, then push
+  await pullFromCloud();
+  await pushToCloud();
+}
+
+function scheduleSync() {
+  if (_syncTimer) clearTimeout(_syncTimer);
+  _syncTimer = setTimeout(() => pushToCloud(), SYNC_DEBOUNCE);
+}
+
+// Override saveState to trigger cloud sync
+const _originalSaveState = saveState;
+saveState = function() {
+  _originalSaveState();
+  const h = getLocalHash();
+  if (h !== _lastLocalHash) {
+    _lastLocalHash = h;
+    if (_cloudEnabled) scheduleSync();
+  }
+};
+
+// Periodic pull
+let _pullInterval = null;
+function startAutoPull() {
+  if (_pullInterval) clearInterval(_pullInterval);
+  _pullInterval = setInterval(async () => {
+    const remote = await ghFetch();
+    if (remote) {
+      const rHash = btoa(unescape(encodeURIComponent(JSON.stringify({
+        todos: remote.todos, weights: remote.weights, maoyang: remote.maoyang
+      })))).slice(0, 50);
+      if (rHash !== _lastLocalHash) {
+        mergeRemote(remote);
+        _lastLocalHash = rHash;
+        setSyncStatus('synced', '云端有更新');
+        showToast('🔄 检测到云端数据更新，已自动同步');
+      }
+    }
+  }, PULL_INTERVAL);
+}
+
+async function initCloudSync() {
+  const token = getGhToken();
+  if (token) {
+    _cloudEnabled = true;
+    document.getElementById('cloud-sync-info').textContent = '✅ 云端同步已启用';
+    setSyncStatus('syncing', '连接中...');
+    await syncNow();
+    startAutoPull();
+    document.getElementById('gh-token-input').value = token;
+  } else {
+    document.getElementById('cloud-sync-info').textContent = '⚠️ 未配置 Token，仅可读取云端数据';
+    // Try pull from cloud without token
+    const remote = await ghFetch();
+    if (remote && remote.syncedAt) {
+      _cloudEnabled = true; // Read-only cloud
+      mergeRemote(remote);
+      _lastLocalHash = getLocalHash();
+      setSyncStatus('synced', '已加载云端数据');
+      document.getElementById('cloud-sync-info').textContent = '📖 只读模式（云端数据已加载，配置 Token 后可写入）';
+    } else {
+      setSyncStatus('synced', '本地模式');
+    }
+    // Start pull even without token
+    startAutoPull();
+  }
+}
+
 // ============ INIT ============
 function init() {
   loadState();
+  _lastLocalHash = getLocalHash();
   switchPage('news');
   fetchNews();
   updateBadges();
+  initCloudSync();
   document.getElementById('main-content').addEventListener('click', (e) => {
     if (window.innerWidth <= 768 && document.getElementById('sidebar').classList.contains('open')) closeSidebar();
   });
