@@ -1532,10 +1532,13 @@ async function ghPush(content) {
   } catch(e) { return false; }
 }
 
-function getLocalHash() {
+function getHashOf(obj) {
   return btoa(unescape(encodeURIComponent(JSON.stringify({
-    todos: state.todos, weights: state.weights, maoyang: state.maoyang
+    todos: obj.todos, weights: obj.weights, maoyang: obj.maoyang
   })))).slice(0, 50);
+}
+function getLocalHash() {
+  return getHashOf(state);
 }
 
 function getCloudPayload() {
@@ -1576,39 +1579,62 @@ async function pushToCloud() {
 }
 
 function mergeRemote(remote) {
-  if (!remote) return;
-  // Simple merge: take remote data if it exists
-  if (remote.todos && remote.todos.length > 0) state.todos = remote.todos;
-  if (remote.weights && remote.weights.length > 0) state.weights = remote.weights;
-  if (remote.maoyang) state.maoyang = remote.maoyang;
-  saveState();
-  switchPage(state.currentPage);
+  if (!remote) return false;
+  let changed = false;
+  // todos: 按 createdAt 去重合并（本地优先，远端补充缺失的）
+  if (Array.isArray(remote.todos)) {
+    const map = new Map();
+    (state.todos||[]).forEach(t => map.set(t.createdAt||t.text, t));
+    remote.todos.forEach(t => { const k = t.createdAt||t.text; if (!map.has(k)) map.set(k, t); });
+    const merged = [...map.values()];
+    if (JSON.stringify(merged) !== JSON.stringify(state.todos)) { state.todos = merged; changed = true; }
+  }
+  // weights: 按 date+period 去重合并
+  if (Array.isArray(remote.weights)) {
+    const map = new Map();
+    (state.weights||[]).forEach(w => map.set(w.date+'|'+w.period, w));
+    remote.weights.forEach(w => { const k = w.date+'|'+w.period; if (!map.has(k)) map.set(k, w); });
+    const merged = [...map.values()];
+    if (JSON.stringify(merged) !== JSON.stringify(state.weights)) { state.weights = merged; changed = true; }
+  }
+  // maoyang: 按周期逐条去重合并（保留双方所有不重复记录）
+  if (remote.maoyang && remote.maoyang.periods) {
+    const merged = { periods: {} };
+    const allPeriods = new Set([...Object.keys(state.maoyang.periods||{}), ...Object.keys(remote.maoyang.periods)]);
+    allPeriods.forEach(pk => {
+      const localArr = state.maoyang.periods[pk]||[];
+      const remoteArr = remote.maoyang.periods[pk]||[];
+      const seen = new Set(), arr = [];
+      localArr.concat(remoteArr).forEach(rec => {
+        const key = JSON.stringify(rec);
+        if (!seen.has(key)) { seen.add(key); arr.push(rec); }
+      });
+      merged.periods[pk] = arr;
+    });
+    if (JSON.stringify(merged) !== JSON.stringify(state.maoyang)) { state.maoyang = merged; changed = true; }
+  }
+  if (changed) {
+    _lastLocalHash = getLocalHash(); // 先更新，避免 saveState 重复触发上传
+    saveState();
+    switchPage(state.currentPage);
+  }
+  return changed;
 }
 
 async function pullFromCloud() {
   const remote = await ghFetch();
   if (!remote) {
     if (_cloudEnabled) setSyncStatus('error', '拉取失败');
-    return;
+    return null;
   }
-  const rHash = btoa(unescape(encodeURIComponent(JSON.stringify({
-    todos: remote.todos, weights: remote.weights, maoyang: remote.maoyang
-  })))).slice(0, 50);
-  if (rHash !== _lastLocalHash) {
-    // Remote data is different
-    if (remote.syncedAt) {
-      mergeRemote(remote);
-      _lastLocalHash = rHash;
-      setSyncStatus('synced', '已同步');
-      showToast('已从云端加载最新数据');
-    } else {
-      // Remote has no syncedAt, might be older format, skip
-      setSyncStatus('synced', '云端无数据');
-    }
-  } else {
-    setSyncStatus('synced', '已同步');
-  }
-  _lastLocalHash = rHash;
+  const rHash = getHashOf(remote);
+  if (rHash === getLocalHash()) { setSyncStatus('synced', '已同步'); return rHash; }
+  if (!remote.syncedAt) { setSyncStatus('synced', '云端无数据'); return null; }
+  const changed = mergeRemote(remote);
+  _lastLocalHash = getLocalHash();
+  setSyncStatus('synced', '已同步');
+  if (changed) showToast('已从云端加载最新数据');
+  return rHash;
 }
 
 async function syncNow() {
@@ -1628,9 +1654,13 @@ async function syncNow() {
   }
   _cloudEnabled = true;
   setSyncStatus('syncing', '同步中...');
-  // Pull first, then push
-  await pullFromCloud();
-  await pushToCloud();
+  // Pull first, then push only if local has changes remote doesn't
+  const rHash = await pullFromCloud();
+  if (rHash === null || getLocalHash() !== rHash) {
+    await pushToCloud();
+  } else {
+    setSyncStatus('synced', '已同步');
+  }
 }
 
 function scheduleSync() {
@@ -1655,15 +1685,16 @@ function startAutoPull() {
   if (_pullInterval) clearInterval(_pullInterval);
   _pullInterval = setInterval(async () => {
     const remote = await ghFetch();
-    if (remote) {
-      const rHash = btoa(unescape(encodeURIComponent(JSON.stringify({
-        todos: remote.todos, weights: remote.weights, maoyang: remote.maoyang
-      })))).slice(0, 50);
-      if (rHash !== _lastLocalHash) {
-        mergeRemote(remote);
-        _lastLocalHash = rHash;
+    if (!remote) return;
+    const rHash = getHashOf(remote);
+    if (rHash !== getLocalHash()) {
+      const changed = mergeRemote(remote);
+      _lastLocalHash = getLocalHash();
+      if (changed) {
         setSyncStatus('synced', '云端有更新');
         showToast('🔄 检测到云端数据更新，已自动同步');
+        // 合并后若有 Token，把合并结果推回云端，让其他设备也能拿到
+        if (_cloudEnabled) await pushToCloud();
       }
     }
   }, PULL_INTERVAL);
