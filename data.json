@@ -1,54 +1,10 @@
 {
   "todos": [],
-  "weights": [
-    {
-      "date": "2026-08-12",
-      "period": "evening",
-      "value": 99,
-      "createdAt": "2026-08-12T09:45:57.279Z"
-    }
-  ],
+  "weights": [],
   "maoyang": {
     "periods": {
-      "2026-08": [
-        {
-          "name": "酷奇",
-          "item": "大众80头",
-          "orderDate": "2026-08-12",
-          "cost": "10.3",
-          "advance": "",
-          "settlement": "",
-          "shipping": "",
-          "tracking": "",
-          "payment": "",
-          "settleDate": ""
-        },
-        {
-          "name": "",
-          "item": "JD快递",
-          "orderDate": "2026-08-12",
-          "cost": "",
-          "advance": "",
-          "settlement": "6.94",
-          "shipping": "",
-          "tracking": "",
-          "payment": "",
-          "settleDate": ""
-        },
-        {
-          "name": "",
-          "item": "JD快递",
-          "orderDate": "2026-08-12",
-          "cost": "0",
-          "advance": "",
-          "settlement": "13.93",
-          "shipping": "",
-          "tracking": "",
-          "payment": "",
-          "settleDate": ""
-        }
-      ]
+      "2026-08": []
     }
   },
-  "syncedAt": "2026-08-12T09:46:00.281Z"
+  "syncedAt": "2026-08-12T09:46:53.120Z"
 }
