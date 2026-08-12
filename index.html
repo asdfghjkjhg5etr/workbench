@@ -1324,7 +1324,8 @@ function renderMaoyangTable() {
   title.textContent = `${state.currentPeriod.replace('-','年')}月 数据`;
   if (data.length===0) { tbody.innerHTML=''; empty.style.display='block'; return; }
   empty.style.display='none';
-  tbody.innerHTML = data.map((r,i)=>{
+  tbody.innerHTML = data.slice().reverse().map((r, revI) => {
+    const i = data.length - 1 - revI;
     const profit = (parseFloat(r.settlement)||0)-(parseFloat(r.cost)||0)-(parseFloat(r.shipping)||0)-(parseFloat(r.payment)||0);
     return `<tr>
       <td style="color:${profit>=0?'var(--success)':'var(--danger)'};font-weight:600">${formatMoney(profit)}</td>
