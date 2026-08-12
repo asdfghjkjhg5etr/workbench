@@ -672,8 +672,8 @@ tr:hover td { background: #f8faff; }
       <table>
         <thead>
           <tr>
-            <th>姓名</th><th>物品</th><th>下单日期</th><th>本金</th><th>默认垫付</th>
-            <th>结账</th><th>运费</th><th>备注</th><th>打款</th><th>利润</th>
+            <th>利润</th><th>姓名</th><th>物品</th><th>下单日期</th><th>本金</th><th>默认垫付</th>
+            <th>结账</th><th>运费</th><th>备注</th><th>打款</th>
             <th>结账日期</th><th>操作</th>
           </tr>
         </thead>
@@ -1327,10 +1327,10 @@ function renderMaoyangTable() {
   tbody.innerHTML = data.map((r,i)=>{
     const profit = (parseFloat(r.settlement)||0)-(parseFloat(r.cost)||0)-(parseFloat(r.shipping)||0)-(parseFloat(r.payment)||0);
     return `<tr>
+      <td style="color:${profit>=0?'var(--success)':'var(--danger)'};font-weight:600">${formatMoney(profit)}</td>
       <td>${escapeHtml(r.name||'-')}</td><td>${escapeHtml(r.item||'-')}</td><td>${formatDate(r.orderDate)}</td>
       <td>${formatMoney(r.cost)}</td><td>${r.advance||'-'}</td><td>${formatMoney(r.settlement)}</td>
       <td>${formatMoney(r.shipping)}</td><td>${escapeHtml(r.tracking||'-')}</td><td>${formatMoney(r.payment)}</td>
-      <td style="color:${profit>=0?'var(--success)':'var(--danger)'};font-weight:600">${formatMoney(profit)}</td>
       <td>${formatDate(r.settleDate)}</td>
       <td>
         <button class="btn btn-outline btn-sm" onclick="editMaoyangRow(${i})">编辑</button>
