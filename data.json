@@ -1,16 +1,16 @@
 {
   "todos": [
     {
-      "text": "作业",
-      "priority": "medium",
-      "done": false,
-      "createdAt": "2026-08-12T09:49:20.340Z"
-    },
-    {
       "text": "444",
       "priority": "medium",
       "done": false,
       "createdAt": "2026-08-13T10:02:39.213Z"
+    },
+    {
+      "text": "作业",
+      "priority": "medium",
+      "done": false,
+      "createdAt": "2026-08-12T09:49:20.340Z"
     }
   ],
   "weights": [
@@ -129,5 +129,5 @@
       ]
     }
   },
-  "syncedAt": "2026-08-13T10:05:47.268Z"
+  "syncedAt": "2026-08-13T10:06:01.790Z"
 }
