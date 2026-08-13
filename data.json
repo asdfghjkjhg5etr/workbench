@@ -1,13 +1,5 @@
 {
-  "todos": [
-    {
-      "text": "u几口老婆；p'",
-      "priority": "medium",
-      "done": false,
-      "createdAt": "2026-08-13T15:46:26.929Z",
-      "updatedAt": "2026-08-13T15:46:26.929Z"
-    }
-  ],
+  "todos": [],
   "weights": [],
   "maoyang": {
     "periods": {
@@ -159,5 +151,5 @@
       ]
     }
   },
-  "syncedAt": "2026-08-13T17:25:40.359Z"
+  "syncedAt": "2026-08-13T17:26:08.741Z"
 }
