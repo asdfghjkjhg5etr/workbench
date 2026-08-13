@@ -1561,12 +1561,11 @@ async function pushToCloud() {
     setSyncStatus('synced', '本地无数据，已跳过上传（保护云端）');
     return;
   }
-  // SAFEGUARD: if we never pulled (no _lastSyncSha), pull first to avoid overwriting cloud
-  if (!_lastSyncSha) {
-    const remote = await ghFetch();
-    if (remote) {
-      mergeRemote(remote);
-    }
+  // SAFEGUARD: ALWAYS pull & merge BEFORE push, so a device with partial/stale
+  // local data (e.g. missing todos or weights) can NEVER wipe those from cloud.
+  const remote = await ghFetch();
+  if (remote) {
+    if (mergeRemote(remote)) showToast('已合并云端数据，防止覆盖');
   }
   const result = await ghPush(getCloudPayload());
   if (result === 'conflict') {
