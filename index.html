@@ -763,6 +763,22 @@ tr:hover td { background: #f8faff; }
   </div>
 </div>
 
+<!-- ====== CLOUD UPDATE MODAL ====== -->
+<div class="modal-overlay" id="cloud-update-modal">
+  <div class="modal" style="max-width:540px">
+    <h3>🔄 云端有新数据</h3>
+    <div style="font-size:13px;color:var(--text-muted);margin-bottom:12px">
+      云端更新时间：<span id="cu-time" style="color:var(--text-light);font-weight:600"></span>
+    </div>
+    <div id="cu-local-pending" style="display:none;background:#fef3c7;border:1px solid var(--warning);border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:12px;color:#92400e"></div>
+    <div id="cu-content" style="max-height:48vh;overflow-y:auto;display:flex;flex-direction:column;gap:10px"></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="declineCloudUpdate()">拒绝</button>
+      <button class="btn btn-primary" onclick="applyCloudUpdate()">合并更新</button>
+    </div>
+  </div>
+</div>
+
 <!-- ====== MAOYANG MODAL ====== -->
 <div class="modal-overlay" id="maoyang-modal">
   <div class="modal">
@@ -1691,9 +1707,152 @@ function mergeRemote(remote) {
   return changed;
 }
 
+// ===== 云端更新：明细 diff + 自定义弹窗 =====
+// 唯一键（与 mergeRecords 保持一致）
+function todoKey(t){ return t.createdAt || t.text; }
+function weightKey(w){ return w.createdAt || (w.date+'|'+w.period); }
+
+// 计算 b 相对 a 的更新：b 中新增 + b 中修改版本（recTime 更新）
+function diffCloud(a, b) {
+  const out = { todos:{added:[],modified:[]}, weights:{added:[],modified:[]}, maoyang:{added:[],modified:[]} };
+  const ltMap = new Map((a.todos||[]).map(t=>[todoKey(t),t]));
+  (b.todos||[]).forEach(rt=>{
+    const lt = ltMap.get(todoKey(rt));
+    if(!lt) out.todos.added.push(rt);
+    else if(recTime(rt) > recTime(lt)) out.todos.modified.push(rt);
+  });
+  const lwMap = new Map((a.weights||[]).map(w=>[weightKey(w),w]));
+  (b.weights||[]).forEach(rw=>{
+    const lw = lwMap.get(weightKey(rw));
+    if(!lw) out.weights.added.push(rw);
+    else if(recTime(rw) > recTime(lw)) out.weights.modified.push(rw);
+  });
+  // maoyang: 跨月份归并，按 maoyangKey 去重
+  const aPeriods = (a.maoyang && a.maoyang.periods) || {};
+  const bPeriods = (b.maoyang && b.maoyang.periods) || {};
+  const aMyMap = new Map();
+  Object.values(aPeriods).forEach(arr=>(arr||[]).forEach(r=>aMyMap.set(maoyangKey(r), r)));
+  Object.values(bPeriods).forEach(arr=>(arr||[]).forEach(r=>{
+    const lr = aMyMap.get(maoyangKey(r));
+    if(!lr) out.maoyang.added.push(r);
+    else if(recTime(r) > recTime(lr)) out.maoyang.modified.push(r);
+  }));
+  return out;
+}
+
+// 记录描述（用于弹窗展示）
+function describeTodo(r){ return (r.done ? '✓ ' : '') + (r.text || '(无内容)'); }
+function describeWeight(r){
+  let ds = '?';
+  if (r.date) { const d = new Date(r.date); if(!isNaN(d)) ds = (d.getMonth()+1)+'-'+d.getDate(); }
+  const p = r.period==='morning' ? '晨' : (r.period==='evening' ? '晚' : '');
+  return ds + ' ' + p + ' ' + (r.value!=null ? r.value : '?') + 'kg';
+}
+function describeMaoyang(r){
+  const parts = [];
+  if (r.name) parts.push(r.name);
+  if (r.item) parts.push(r.item);
+  let s = parts.join(' / ') || '羊毛记录';
+  if (r.settlement) s += ' · 回款' + formatMoney(r.settlement);
+  if (r.orderDate) { const d = new Date(r.orderDate); if(!isNaN(d)) s = (d.getMonth()+1)+'-'+d.getDate()+' ' + s; }
+  return s;
+}
+// 云端更新时间格式化：2026-08-13T18:30:00.000Z -> 8-13 18:30
+function fmtSyncTime(iso){
+  if(!iso) return '';
+  const d = new Date(iso);
+  if(isNaN(d)) return iso;
+  return (d.getMonth()+1)+'-'+d.getDate()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+}
+
+let _pendingCloudRemote = null;
+let _pendingCloudDiff = null;
+
+// 渲染并打开云端更新提醒弹窗
+function showCloudUpdateModal(remote) {
+  const diff = diffCloud(state, remote);
+  const localPending = diffCloud(remote, state); // 本地相对云端的更新（未上传）
+  _pendingCloudRemote = remote;
+  _pendingCloudDiff = diff;
+
+  const countAdd = d => d.todos.added.length + d.weights.added.length + d.maoyang.added.length;
+  const countMod = d => d.todos.modified.length + d.weights.modified.length + d.maoyang.modified.length;
+
+  document.getElementById('cu-time').textContent = fmtSyncTime(remote.syncedAt);
+
+  // 本地未上传提示
+  const lpAdd = countAdd(localPending), lpMod = countMod(localPending);
+  const lpBox = document.getElementById('cu-local-pending');
+  if (lpAdd + lpMod > 0) {
+    lpBox.style.display = 'block';
+    lpBox.textContent = '⚠️ 本地有 ' + (lpAdd+lpMod) + ' 条未上传的修改（新增 ' + lpAdd + '、修改 ' + lpMod + '），合并后请到对应板块点【确认上传】';
+  } else {
+    lpBox.style.display = 'none';
+  }
+
+  // 明细列表
+  const c = document.getElementById('cu-content');
+  const sections = [
+    { name:'待办', icon:'📋', data:diff.todos, desc:describeTodo },
+    { name:'体重', icon:'⚖️', data:diff.weights, desc:describeWeight },
+    { name:'羊毛', icon:'🧶', data:diff.maoyang, desc:describeMaoyang },
+  ];
+  let html = '';
+  sections.forEach(sec => {
+    const n = sec.data.added.length + sec.data.modified.length;
+    if (n === 0) return;
+    html += '<div style="border:0.5px solid var(--border);border-radius:8px;overflow:hidden">';
+    html += '<div style="background:#f8fafc;padding:6px 12px;font-size:13px;font-weight:600;color:var(--text-light)">'+sec.icon+' '+sec.name;
+    html += ' <span style="color:var(--success);font-weight:500">+'+sec.data.added.length+'</span>';
+    if (sec.data.modified.length) html += ' <span style="color:var(--warning);font-weight:500">~'+sec.data.modified.length+'</span>';
+    html += '</div><div>';
+    sec.data.added.forEach(r=>{
+      html += '<div style="padding:5px 12px;font-size:13px;border-top:0.5px solid var(--border)"><span style="color:var(--success);font-weight:600">新增</span> '+escapeHtml(sec.desc(r))+'</div>';
+    });
+    sec.data.modified.forEach(r=>{
+      html += '<div style="padding:5px 12px;font-size:13px;border-top:0.5px solid var(--border)"><span style="color:var(--warning);font-weight:600">修改</span> '+escapeHtml(sec.desc(r))+'</div>';
+    });
+    html += '</div></div>';
+  });
+  if (!html) {
+    html = '<div style="text-align:center;color:var(--text-muted);padding:20px;font-size:13px">云端数据有细微变化（如排序），可安全忽略</div>';
+  }
+  c.innerHTML = html;
+  document.getElementById('cloud-update-modal').classList.add('show');
+}
+
+// 合并更新
+function applyCloudUpdate() {
+  document.getElementById('cloud-update-modal').classList.remove('show');
+  if (!_pendingCloudRemote) return;
+  const changed = mergeRemote(_pendingCloudRemote);
+  _lastLocalHash = getLocalHash();
+  _declinedCloudHash = null;
+  if (_pendingCloudDiff) {
+    const add = _pendingCloudDiff.todos.added.length + _pendingCloudDiff.weights.added.length + _pendingCloudDiff.maoyang.added.length;
+    const mod = _pendingCloudDiff.todos.modified.length + _pendingCloudDiff.weights.modified.length + _pendingCloudDiff.maoyang.modified.length;
+    showToast('✅ 已更新：新增 ' + add + ' 条，修改 ' + mod + ' 条');
+  } else if (changed) {
+    showToast('✅ 已更新本地数据');
+  }
+  _pendingCloudRemote = null;
+  _pendingCloudDiff = null;
+  setSyncStatus('synced', '已更新');
+}
+
+// 拒绝：保留黄灯提醒，随时可手动更新
+function declineCloudUpdate() {
+  document.getElementById('cloud-update-modal').classList.remove('show');
+  if (_pendingCloudRemote) _declinedCloudHash = getHashOf(_pendingCloudRemote);
+  _pendingCloudRemote = null;
+  _pendingCloudDiff = null;
+  setSyncStatus('warning', '云端有更新，点"检查更新"同步');
+  showToast('已拒绝，黄灯常亮提醒（可随时手动更新）');
+}
+
 // ===== 检查云端更新：打开工作台/手动检查/定时检查时提醒 =====
-// silent=true 时为定时后台检查（轻提醒不弹窗）；false 时弹窗让用户选择"更新"或"拒绝"
-async function checkCloudUpdate(silent) {
+// silent=true 定时后台检查（轻提醒不弹窗）；force=true 手动触发，跳过"已拒绝"标记强制弹窗
+async function checkCloudUpdate(silent, force) {
   const remote = await ghFetch();
   if (!remote) {
     if (!silent) setSyncStatus('error', '无法连接云端');
@@ -1709,33 +1868,29 @@ async function checkCloudUpdate(silent) {
     return;
   }
   // 云端与本地不一致
-  if (_declinedCloudHash === rHash) {
-    if (!silent) setSyncStatus('warning', '已忽略云端更新（本地为准）');
-    return; // 用户已拒绝过这个云端版本，不重复打扰
+  if (_declinedCloudHash === rHash && !force) {
+    setSyncStatus('warning', '云端有更新，点"检查更新"同步');
+    return; // 已拒绝过该版本，黄灯常亮但不重复弹窗
+  }
+  // 兜底：仅排序等细微差异无实质内容更新时不弹窗
+  const diff = diffCloud(state, remote);
+  const hasContent = diff.todos.added.length + diff.todos.modified.length + diff.weights.added.length + diff.weights.modified.length + diff.maoyang.added.length + diff.maoyang.modified.length > 0;
+  if (!hasContent) {
+    setSyncStatus('synced', '已同步');
+    return;
   }
   if (silent) {
     setSyncStatus('warning', '云端有更新，可手动更新');
     showToast('🔄 云端有更新，点击"检查更新"可手动同步');
     return;
   }
-  // 主动检查 / 打开工作台：弹窗让用户选择 更新 或 拒绝
-  const ok = confirm('检测到云端有更新的数据（云端更新时间：' + (remote.syncedAt||'') + '）。\n\n点击【确定】= 更新本地数据（以最新数据为准合并）\n点击【取消】= 拒绝更新，保留本地数据');
-  if (ok) {
-    const changed = mergeRemote(remote);
-    _lastLocalHash = getLocalHash();
-    _declinedCloudHash = null;
-    if (changed) showToast('✅ 已更新本地数据');
-    setSyncStatus('synced', '已更新');
-  } else {
-    _declinedCloudHash = rHash;
-    setSyncStatus('warning', '已忽略云端更新（本地为准）');
-    showToast('已拒绝更新，保留本地数据');
-  }
+  // 主动检查 / 打开工作台：弹明细弹窗
+  showCloudUpdateModal(remote);
 }
 
 async function syncNow() {
-  // 手动检查云端更新：有更新则让用户选择"更新本地"或"拒绝"
-  await checkCloudUpdate(false);
+  // 手动检查：强制弹窗（即使之前拒绝过）
+  await checkCloudUpdate(false, true);
 }
 
 // 数据保存：仅写入本地 localStorage，不再自动上传云端
