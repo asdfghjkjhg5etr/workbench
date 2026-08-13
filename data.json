@@ -1,12 +1,5 @@
 {
-  "todos": [
-    {
-      "text": "作业",
-      "priority": "medium",
-      "done": false,
-      "createdAt": "2026-08-12T09:49:20.340Z"
-    }
-  ],
+  "todos": [],
   "weights": [],
   "maoyang": {
     "periods": {
@@ -50,5 +43,5 @@
       ]
     }
   },
-  "syncedAt": "2026-08-12T09:49:23.342Z"
+  "syncedAt": "2026-08-13T09:23:07.314Z"
 }
