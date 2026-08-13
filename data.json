@@ -1,16 +1,16 @@
 {
   "todos": [
     {
-      "text": "444",
-      "priority": "medium",
-      "done": false,
-      "createdAt": "2026-08-13T10:02:39.213Z"
-    },
-    {
       "text": "作业",
       "priority": "medium",
       "done": false,
       "createdAt": "2026-08-12T09:49:20.340Z"
+    },
+    {
+      "text": "444",
+      "priority": "medium",
+      "done": false,
+      "createdAt": "2026-08-13T10:02:39.213Z"
     }
   ],
   "weights": [
@@ -31,12 +31,12 @@
     "periods": {
       "2026-08": [
         {
-          "name": "酷奇",
-          "item": "大众80头",
+          "name": "持续回款",
+          "item": "酷奇大众80头",
           "orderDate": "2026-08-12",
           "cost": "10.3",
           "advance": "",
-          "settlement": "",
+          "settlement": "5.5",
           "shipping": "",
           "tracking": "",
           "payment": "",
@@ -61,18 +61,6 @@
           "cost": "0",
           "advance": "",
           "settlement": "13.93",
-          "shipping": "",
-          "tracking": "",
-          "payment": "",
-          "settleDate": ""
-        },
-        {
-          "name": "持续回款",
-          "item": "酷奇大众80头",
-          "orderDate": "2026-08-12",
-          "cost": "10.3",
-          "advance": "",
-          "settlement": "5.5",
           "shipping": "",
           "tracking": "",
           "payment": "",
@@ -125,9 +113,21 @@
           "tracking": "",
           "payment": "",
           "settleDate": "2026-08-13"
+        },
+        {
+          "name": "酷奇",
+          "item": "大众80头",
+          "orderDate": "2026-08-12",
+          "cost": "10.3",
+          "advance": "",
+          "settlement": "",
+          "shipping": "",
+          "tracking": "",
+          "payment": "",
+          "settleDate": ""
         }
       ]
     }
   },
-  "syncedAt": "2026-08-13T10:02:42.227Z"
+  "syncedAt": "2026-08-13T10:04:56.986Z"
 }
