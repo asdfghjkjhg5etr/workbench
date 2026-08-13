@@ -1,25 +1,6 @@
 {
   "todos": [],
-  "weights": [
-    {
-      "date": "2026-08-05",
-      "period": "evening",
-      "value": 99,
-      "createdAt": "2026-08-06T15:11:06.524Z"
-    },
-    {
-      "date": "2026-08-06",
-      "period": "evening",
-      "value": 55,
-      "createdAt": "2026-08-06T15:04:10.884Z"
-    },
-    {
-      "date": "2026-08-06",
-      "period": "evening",
-      "value": 188,
-      "createdAt": "2026-08-06T15:27:53.268Z"
-    }
-  ],
+  "weights": [],
   "maoyang": {
     "periods": {
       "2026-08": [
@@ -122,5 +103,5 @@
       ]
     }
   },
-  "syncedAt": "2026-08-13T10:46:03.772Z"
+  "syncedAt": "2026-08-13T10:46:13.810Z"
 }
