@@ -999,11 +999,12 @@ function renderTodos() {
 function addTodo() {
   const inp = document.getElementById('todo-input'), pri = document.getElementById('todo-priority');
   const txt = inp.value.trim(); if (!txt) { showToast('请输入内容'); return; }
-  state.todos.push({ text:txt, priority:pri.value, done:false, createdAt:new Date().toISOString() });
+  const now = new Date().toISOString();
+  state.todos.push({ text:txt, priority:pri.value, done:false, createdAt:now, updatedAt:now });
   inp.value = ''; saveState(); renderTodos(); showToast('已添加');
 }
-function toggleTodo(i) { state.todos[i].done = !state.todos[i].done; saveState(); renderTodos(); }
-function editTodoPrompt(i) { const t = prompt('编辑待办:', state.todos[i].text); if (t&&t.trim()) { state.todos[i].text=t.trim(); saveState(); renderTodos(); showToast('已更新'); } }
+function toggleTodo(i) { state.todos[i].done = !state.todos[i].done; state.todos[i].updatedAt = new Date().toISOString(); saveState(); renderTodos(); }
+function editTodoPrompt(i) { const t = prompt('编辑待办:', state.todos[i].text); if (t&&t.trim()) { state.todos[i].text=t.trim(); state.todos[i].updatedAt = new Date().toISOString(); saveState(); renderTodos(); showToast('已更新'); } }
 function deleteTodo(i) { if (confirm('确定删除？')) { state.todos.splice(i,1); saveState(); renderTodos(); showToast('已删除'); } }
 
 // ============ WEIGHT ============
@@ -1022,7 +1023,8 @@ function addWeight() {
   const val = parseFloat(document.getElementById('weight-value').value);
   if (!date) { showToast('请选择日期'); return; }
   if (!val||val<20||val>300) { showToast('请输入合理的体重(20-300kg)'); return; }
-  state.weights.push({ date, period, value:val, createdAt:new Date().toISOString() });
+  const now = new Date().toISOString();
+  state.weights.push({ date, period, value:val, createdAt:now, updatedAt:now });
   state.weights.sort((a,b)=>new Date(a.date+(a.period==='morning'?'T08:00':'T20:00'))-new Date(b.date+(b.period==='morning'?'T08:00':'T20:00')));
   document.getElementById('weight-value').value=''; saveState();
   const pk = getPeriodKey(date);
@@ -1365,6 +1367,7 @@ function openMaoyangModal(title, editId) {
   document.getElementById('maoyang-modal').classList.add('show');
 }
 function closeMaoyangModal() { document.getElementById('maoyang-modal').classList.remove('show'); }
+function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
 function saveMaoyangRecord() {
   const record = {
     name: document.getElementById('my-name').value.trim(),
@@ -1381,7 +1384,19 @@ function saveMaoyangRecord() {
   if (!record.item) { showToast('请输入物品名称'); return; }
   const editId = document.getElementById('my-edit-id').value;
   const period = state.maoyang.periods[state.currentPeriod];
-  if (editId !== '') { period[parseInt(editId)] = record; } else { period.push(record); }
+  const now = new Date().toISOString();
+  if (editId !== '') {
+    const old = period[parseInt(editId)] || {};
+    record.id = old.id || genId();
+    record.createdAt = old.createdAt || now;
+    record.updatedAt = now;
+    period[parseInt(editId)] = record;
+  } else {
+    record.id = genId();
+    record.createdAt = now;
+    record.updatedAt = now;
+    period.push(record);
+  }
   saveState(); closeMaoyangModal();
   renderMaoyangTable(); renderMaoyangSummary();
   showToast(editId!==''?'已更新':'已添加');
@@ -1566,13 +1581,17 @@ async function pushToCloud() {
   const remote = await ghFetch();
   if (remote) {
     if (mergeRemote(remote)) showToast('已合并云端数据，防止覆盖');
+  } else if (!_lastSyncSha) {
+    // 拉取失败且没有乐观锁（sha）→ 拒绝推送，防止无锁直接覆盖云端数据
+    setSyncStatus('error', '拉取失败，已跳过上传（保护云端数据）');
+    return;
   }
   const result = await ghPush(getCloudPayload());
   if (result === 'conflict') {
     // Remote changed while we were away, pull and merge
-    const remote = await ghFetch();
-    if (remote) {
-      mergeRemote(remote);
+    const remote2 = await ghFetch();
+    if (remote2) {
+      mergeRemote(remote2);
       // Retry push
       const retryResult = await ghPush(getCloudPayload());
       if (retryResult === true) {
@@ -1587,48 +1606,57 @@ async function pushToCloud() {
     _lastLocalHash = getLocalHash();
     setSyncStatus('synced', '已同步');
   } else {
-    setSyncStatus('error', '上传失败');
+    // 推送失败：不更新 _lastLocalHash，下次数据变更/自动拉取时会自动重试
+    setSyncStatus('error', '上传失败，稍后自动重试');
   }
+}
+
+// 记录时间：优先 updatedAt（修改时间），无则用 createdAt（创建时间），都没有视为 0
+function recTime(r) {
+  const t = new Date(r && (r.updatedAt || r.createdAt));
+  return isNaN(t) ? 0 : t.getTime();
+}
+// 羊毛记录唯一键：有 id 用 id，老数据无 id 则用内容（保证相同内容去重）
+function maoyangKey(rec) {
+  if (rec && rec.id) return 'id:' + rec.id;
+  return 'json:' + JSON.stringify(rec);
+}
+// 合并两批记录：按唯一键归并，同一记录取 updatedAt/createdAt 较新的版本（以最新数据为准）
+function mergeRecords(localArr, remoteArr, keyFn) {
+  const map = new Map();
+  (localArr || []).concat(remoteArr || []).forEach(rec => {
+    if (!rec) return;
+    const k = keyFn(rec);
+    const old = map.get(k);
+    if (!old || recTime(rec) >= recTime(old)) map.set(k, rec);
+  });
+  return [...map.values()];
 }
 
 function mergeRemote(remote) {
   if (!remote) return false;
   let changed = false;
-  // todos: 按 createdAt 去重合并（本地优先，远端补充缺失的）
+  // todos: 按 createdAt/text 去重，同一记录取修改时间较新的版本
   if (Array.isArray(remote.todos)) {
-    const map = new Map();
-    (state.todos||[]).forEach(t => map.set(t.createdAt||t.text, t));
-    remote.todos.forEach(t => { const k = t.createdAt||t.text; if (!map.has(k)) map.set(k, t); });
-    const merged = [...map.values()];
+    const merged = mergeRecords(state.todos, remote.todos, t => t.createdAt || t.text);
     if (JSON.stringify(merged) !== JSON.stringify(state.todos)) { state.todos = merged; changed = true; }
   }
-  // weights: 按 createdAt 去重合并（避免同日期同时段多条记录丢失）
+  // weights: 按 createdAt/date+period 去重，同一记录取较新版本
   if (Array.isArray(remote.weights)) {
-    const map = new Map();
-    (state.weights||[]).forEach(w => map.set(w.createdAt||w.date+'|'+w.period, w));
-    remote.weights.forEach(w => { const k = w.createdAt||w.date+'|'+w.period; if (!map.has(k)) map.set(k, w); });
-    const merged = [...map.values()];
+    const merged = mergeRecords(state.weights, remote.weights, w => w.createdAt || (w.date+'|'+w.period));
     if (JSON.stringify(merged) !== JSON.stringify(state.weights)) { state.weights = merged; changed = true; }
   }
-  // maoyang: 按周期逐条去重合并（保留双方所有不重复记录）
+  // maoyang: 按 id（老数据用内容）去重合并，同一记录取较新版本
   if (remote.maoyang && remote.maoyang.periods) {
     const merged = { periods: {} };
     const allPeriods = new Set([...Object.keys(state.maoyang.periods||{}), ...Object.keys(remote.maoyang.periods)]);
     allPeriods.forEach(pk => {
-      const localArr = state.maoyang.periods[pk]||[];
-      const remoteArr = remote.maoyang.periods[pk]||[];
-      const seen = new Set(), arr = [];
-      localArr.concat(remoteArr).forEach(rec => {
-        const key = JSON.stringify(rec);
-        if (!seen.has(key)) { seen.add(key); arr.push(rec); }
-      });
-      merged.periods[pk] = arr;
+      merged.periods[pk] = mergeRecords(state.maoyang.periods[pk], remote.maoyang.periods[pk], maoyangKey);
     });
     if (JSON.stringify(merged) !== JSON.stringify(state.maoyang)) { state.maoyang = merged; changed = true; }
   }
   if (changed) {
-    _lastLocalHash = getLocalHash(); // 先更新，避免 saveState 重复触发上传
-    saveState();
+    saveState(); // 触发覆盖后的 saveState 会自动调度推送，把合并结果同步回云端
     switchPage(state.currentPage);
   }
   return changed;
@@ -1687,13 +1715,14 @@ function scheduleSync() {
 }
 
 // Override saveState to trigger cloud sync
+// 注意：_lastLocalHash 只在推送成功时更新；推送失败时保持旧值，
+// 这样下次任何数据变更（或 5 分钟自动拉取）都会自动重新推送，不会丢数据。
 const _originalSaveState = saveState;
 saveState = function() {
   _originalSaveState();
   const h = getLocalHash();
-  if (h !== _lastLocalHash) {
-    _lastLocalHash = h;
-    if (_cloudEnabled) scheduleSync();
+  if (_cloudEnabled && h !== _lastLocalHash) {
+    scheduleSync();
   }
 };
 
@@ -1711,9 +1740,11 @@ function startAutoPull() {
       if (changed) {
         setSyncStatus('synced', '云端有更新');
         showToast('🔄 检测到云端数据更新，已自动同步');
-        // 合并后若有 Token，把合并结果推回云端，让其他设备也能拿到
-        if (_cloudEnabled) await pushToCloud();
       }
+      // 只要云端与本地不一致就推回合并结果：
+      // - 云端有新数据 → 合并后推回，让所有设备拿到同一版本
+      // - 本地有新数据（之前推送失败）→ 趁这次机会补推上去
+      if (_cloudEnabled) await pushToCloud();
     }
   }, PULL_INTERVAL);
 }
