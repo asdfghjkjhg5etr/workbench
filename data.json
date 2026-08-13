@@ -1,5 +1,12 @@
 {
-  "todos": [],
+  "todos": [
+    {
+      "text": "作业",
+      "priority": "medium",
+      "done": false,
+      "createdAt": "2026-08-12T09:49:20.340Z"
+    }
+  ],
   "weights": [
     {
       "date": "2026-08-05",
@@ -12,24 +19,18 @@
       "period": "evening",
       "value": 55,
       "createdAt": "2026-08-06T15:04:10.884Z"
-    },
-    {
-      "date": "2026-08-06",
-      "period": "evening",
-      "value": 188,
-      "createdAt": "2026-08-06T15:27:53.268Z"
     }
   ],
   "maoyang": {
     "periods": {
       "2026-08": [
         {
-          "name": "酷奇",
-          "item": "大众80头",
+          "name": "持续回款",
+          "item": "酷奇大众80头",
           "orderDate": "2026-08-12",
           "cost": "10.3",
           "advance": "",
-          "settlement": "",
+          "settlement": "5.5",
           "shipping": "",
           "tracking": "",
           "payment": "",
@@ -58,9 +59,69 @@
           "tracking": "",
           "payment": "",
           "settleDate": ""
+        },
+        {
+          "name": "持续",
+          "item": "大众",
+          "orderDate": "2026-08-13",
+          "cost": "9.8",
+          "advance": "",
+          "settlement": "",
+          "shipping": "",
+          "tracking": "",
+          "payment": "",
+          "settleDate": ""
+        },
+        {
+          "name": "持续",
+          "item": "快手700头",
+          "orderDate": "2026-08-13",
+          "cost": "8",
+          "advance": "",
+          "settlement": "",
+          "shipping": "",
+          "tracking": "",
+          "payment": "",
+          "settleDate": ""
+        },
+        {
+          "name": "",
+          "item": "oppo",
+          "orderDate": "2026-08-13",
+          "cost": "",
+          "advance": "",
+          "settlement": "13.58",
+          "shipping": "",
+          "tracking": "",
+          "payment": "",
+          "settleDate": ""
+        },
+        {
+          "name": "",
+          "item": "助力",
+          "orderDate": "",
+          "cost": "",
+          "advance": "",
+          "settlement": "1",
+          "shipping": "",
+          "tracking": "",
+          "payment": "",
+          "settleDate": "2026-08-13"
+        },
+        {
+          "name": "酷奇",
+          "item": "大众80头",
+          "orderDate": "2026-08-12",
+          "cost": "10.3",
+          "advance": "",
+          "settlement": "",
+          "shipping": "",
+          "tracking": "",
+          "payment": "",
+          "settleDate": ""
         }
       ]
     }
   },
-  "syncedAt": "2026-08-13T09:24:00.000Z"
+  "syncedAt": "2026-08-13T09:32:09.920Z"
 }
