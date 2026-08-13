@@ -1554,7 +1554,21 @@ async function pushToCloud() {
   if (!_cloudEnabled) return;
   setSyncStatus('syncing', '上传中...');
   const payload = getCloudPayload();
-  const result = await ghPush(payload);
+  // SAFEGUARD: if local is completely empty but we know cloud had data, refuse to push
+  const localEmpty = (payload.todos.length === 0) && (payload.weights.length === 0) &&
+    (!payload.maoyang || !payload.maoyang.periods || Object.keys(payload.maoyang.periods).length === 0);
+  if (localEmpty) {
+    setSyncStatus('synced', '本地无数据，已跳过上传（保护云端）');
+    return;
+  }
+  // SAFEGUARD: if we never pulled (no _lastSyncSha), pull first to avoid overwriting cloud
+  if (!_lastSyncSha) {
+    const remote = await ghFetch();
+    if (remote) {
+      mergeRemote(remote);
+    }
+  }
+  const result = await ghPush(getCloudPayload());
   if (result === 'conflict') {
     // Remote changed while we were away, pull and merge
     const remote = await ghFetch();
@@ -1589,11 +1603,11 @@ function mergeRemote(remote) {
     const merged = [...map.values()];
     if (JSON.stringify(merged) !== JSON.stringify(state.todos)) { state.todos = merged; changed = true; }
   }
-  // weights: 按 date+period 去重合并
+  // weights: 按 createdAt 去重合并（避免同日期同时段多条记录丢失）
   if (Array.isArray(remote.weights)) {
     const map = new Map();
-    (state.weights||[]).forEach(w => map.set(w.date+'|'+w.period, w));
-    remote.weights.forEach(w => { const k = w.date+'|'+w.period; if (!map.has(k)) map.set(k, w); });
+    (state.weights||[]).forEach(w => map.set(w.createdAt||w.date+'|'+w.period, w));
+    remote.weights.forEach(w => { const k = w.createdAt||w.date+'|'+w.period; if (!map.has(k)) map.set(k, w); });
     const merged = [...map.values()];
     if (JSON.stringify(merged) !== JSON.stringify(state.weights)) { state.weights = merged; changed = true; }
   }
@@ -1656,7 +1670,12 @@ async function syncNow() {
   setSyncStatus('syncing', '同步中...');
   // Pull first, then push only if local has changes remote doesn't
   const rHash = await pullFromCloud();
-  if (rHash === null || getLocalHash() !== rHash) {
+  // CRITICAL: if pull failed (null), DO NOT push — could wipe cloud data
+  if (rHash === null) {
+    setSyncStatus('error', '拉取失败，已跳过上传（保护云端数据）');
+    return;
+  }
+  if (getLocalHash() !== rHash) {
     await pushToCloud();
   } else {
     setSyncStatus('synced', '已同步');
