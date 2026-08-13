@@ -25,6 +25,12 @@
       "period": "evening",
       "value": 55,
       "createdAt": "2026-08-06T15:04:10.884Z"
+    },
+    {
+      "date": "2026-08-06",
+      "period": "evening",
+      "value": 188,
+      "createdAt": "2026-08-06T15:27:53.268Z"
     }
   ],
   "maoyang": {
@@ -129,9 +135,5 @@
       ]
     }
   },
-<<<<<<< Updated upstream
-  "syncedAt": "2026-08-13T10:06:01.790Z"
-=======
   "syncedAt": "2026-08-13T10:16:01.000Z"
->>>>>>> Stashed changes
 }
