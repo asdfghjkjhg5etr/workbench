@@ -124,6 +124,7 @@ body {
 }
 .sync-dot.synced { background: #22c55e; box-shadow: 0 0 6px rgba(34,197,94,0.4); }
 .sync-dot.syncing { background: #f59e0b; animation: pulse 1s infinite; }
+.sync-dot.warning { background: #f97316; box-shadow: 0 0 6px rgba(249,115,22,0.4); }
 .sync-dot.error { background: #ef4444; }
 @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
 .cloud-token-hint {
@@ -156,15 +157,18 @@ body {
 
 /* ====== PAGE ====== */
 .page-header {
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;
   margin-bottom: 24px;
   padding-bottom: 16px;
   border-bottom: 2px solid var(--border);
 }
+.page-header .header-left { flex: 1; min-width: 0; }
 .page-header h2 {
   font-size: 26px; font-weight: 700; color: var(--text);
   display: flex; align-items: center; gap: 10px;
 }
 .page-header p { color: var(--text-light); font-size: 14px; margin-top: 4px; }
+.page-header .header-actions { display: flex; gap: 8px; flex-shrink: 0; align-items: center; }
 
 /* ====== CARDS ====== */
 .card {
@@ -573,8 +577,10 @@ tr:hover td { background: #f8faff; }
 <!-- ====== NEWS PAGE ====== -->
 <div class="page" id="page-news">
   <div class="page-header">
-    <h2>🔥 新闻与热点</h2>
-    <p>实时资讯与热点话题</p>
+    <div class="header-left">
+      <h2>🔥 新闻与热点</h2>
+      <p>实时资讯与热点话题</p>
+    </div>
   </div>
   <div class="card">
     <div class="card-header">
@@ -601,8 +607,13 @@ tr:hover td { background: #f8faff; }
 <!-- ====== TODO PAGE ====== -->
 <div class="page" id="page-todo" style="display:none">
   <div class="page-header">
-    <h2>✅ 待办</h2>
-    <p>管理你的任务和计划</p>
+    <div class="header-left">
+      <h2>✅ 待办</h2>
+      <p>管理你的任务和计划</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-primary btn-sm" onclick="confirmUpload('todos')">⬆️ 确认上传</button>
+    </div>
   </div>
   <div class="card">
     <div class="add-todo-row">
@@ -621,8 +632,13 @@ tr:hover td { background: #f8faff; }
 <!-- ====== WEIGHT PAGE ====== -->
 <div class="page" id="page-weight" style="display:none">
   <div class="page-header">
-    <h2>⚖️ 体重</h2>
-    <p>早晚记录，月度追踪</p>
+    <div class="header-left">
+      <h2>⚖️ 体重</h2>
+      <p>早晚记录，月度追踪</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-primary btn-sm" onclick="confirmUpload('weights')">⬆️ 确认上传</button>
+    </div>
   </div>
   <div class="card">
     <h3 style="margin-bottom:12px">记录体重</h3>
@@ -654,8 +670,13 @@ tr:hover td { background: #f8faff; }
 <!-- ====== MAOYANG PAGE ====== -->
 <div class="page" id="page-maoyang" style="display:none">
   <div class="page-header">
-    <h2>🐑 羊毛</h2>
-    <p>记录每一笔收益和支出</p>
+    <div class="header-left">
+      <h2>🐑 羊毛</h2>
+      <p>记录每一笔收益和支出</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-primary btn-sm" onclick="confirmUpload('maoyang')">⬆️ 确认上传</button>
+    </div>
   </div>
   <div class="stats-grid" id="maoyang-summary"></div>
   <div class="card" style="margin-top:16px">
@@ -716,8 +737,8 @@ tr:hover td { background: #f8faff; }
       </div>
     </div>
     <div class="sync-section">
-      <h4>☁️ 云端自动同步</h4>
-      <p>数据自动同步到 GitHub，多设备实时共享。读取无需 Token，写入需要配置。</p>
+      <h4>☁️ 云端同步</h4>
+      <p>数据不会自动上传。修改数据后点击各板块右上角【确认上传】手动覆盖云端；打开工作台时若云端有更新会提醒，可手动更新或拒绝。读取无需 Token，写入需要配置。</p>
       <div class="form-group">
         <label>GitHub Personal Access Token</label>
         <input type="password" id="gh-token-input" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" style="font-family:monospace;font-size:13px">
@@ -732,7 +753,7 @@ tr:hover td { background: #f8faff; }
       </div>
       <div style="margin-top:10px;display:flex;gap:8px">
         <button class="btn btn-primary btn-sm" onclick="saveGhToken()">💾 保存 Token</button>
-        <button class="btn btn-outline btn-sm" onclick="syncNow()" id="sync-now-btn">🔄 立即同步</button>
+        <button class="btn btn-outline btn-sm" onclick="syncNow()" id="sync-now-btn">🔄 检查更新</button>
       </div>
       <p style="font-size:12px;color:var(--text-muted);margin-top:8px" id="cloud-sync-info">未配置云端同步</p>
     </div>
@@ -1475,13 +1496,12 @@ const GH_OWNER = 'asdfghjkjhg5etr';
 const GH_REPO = 'workbench';
 const GH_FILE = 'data.json';
 const GH_API = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_FILE}`;
-const SYNC_DEBOUNCE = 3000;
 const PULL_INTERVAL = 300000;
 
-let _syncTimer = null;
 let _lastSyncSha = null;
 let _lastLocalHash = '';
 let _cloudEnabled = false;
+let _declinedCloudHash = null; // 用户拒绝过的云端版本 hash，不再重复提醒
 
 function getGhToken() {
   try { return atob(localStorage.getItem('wb_gh_token') || ''); } catch(e) { return ''; }
@@ -1491,10 +1511,9 @@ function saveGhToken() {
   if (!v) { showToast('请输入 Token'); return; }
   localStorage.setItem('wb_gh_token', btoa(v));
   _cloudEnabled = true;
-  showToast('Token 已保存，开始云端同步');
-  document.getElementById('cloud-sync-info').textContent = '✅ 云端同步已启用';
-  setSyncStatus('syncing', '连接中...');
-  syncNow();
+  showToast('Token 已保存');
+  document.getElementById('cloud-sync-info').textContent = '✅ 云端同步已启用（手动上传）';
+  setSyncStatus('synced', '已连接云端');
 }
 function setSyncStatus(cls, text) {
   const d = document.getElementById('sync-dot');
@@ -1522,7 +1541,7 @@ async function ghPush(content) {
   if (!token) return false;
   try {
     const body = {
-      message: '🌐 云端同步 ' + new Date().toISOString().slice(0,19),
+      message: '🌐 云端同步 ' + new Date().toISOString(),
       content: btoa(unescape(encodeURIComponent(JSON.stringify(content, null, 2)))),
       branch: 'main'
     };
@@ -1556,59 +1575,69 @@ function getLocalHash() {
   return getHashOf(state);
 }
 
-function getCloudPayload() {
-  return {
-    todos: state.todos,
-    weights: state.weights,
-    maoyang: state.maoyang,
-    syncedAt: new Date().toISOString()
+// ===== 手动确认上传：本地数据覆盖云端对应板块 =====
+// section: 'todos' | 'weights' | 'maoyang'
+// 目标板块用本地数据覆盖云端，其他板块保留云端最新版本（防止陈旧本地数据覆盖云端新数据）
+async function confirmUpload(section) {
+  if (!_cloudEnabled) { showToast('未配置 Token，无法上传'); return; }
+  const names = { todos:'待办', weights:'体重', maoyang:'羊毛' };
+  const counts = {
+    todos: (state.todos||[]).length,
+    weights: (state.weights||[]).length,
+    maoyang: Object.values(state.maoyang.periods||{}).reduce((s,a)=>s+a.length,0)
   };
-}
-
-async function pushToCloud() {
-  if (!_cloudEnabled) return;
+  if (counts.todos===0 && counts.weights===0 && counts.maoyang===0) {
+    showToast('本地无数据，已跳过上传（保护云端）'); return;
+  }
+  if (!confirm(`确认将本地【${names[section]}】数据（${counts[section]} 条）上传并覆盖云端对应数据？\n其他板块将保留云端最新版本。`)) return;
   setSyncStatus('syncing', '上传中...');
-  const payload = getCloudPayload();
-  // SAFEGUARD: if local is completely empty but we know cloud had data, refuse to push
-  const localEmpty = (payload.todos.length === 0) && (payload.weights.length === 0) &&
-    (!payload.maoyang || !payload.maoyang.periods || Object.keys(payload.maoyang.periods).length === 0);
-  if (localEmpty) {
-    setSyncStatus('synced', '本地无数据，已跳过上传（保护云端）');
-    return;
-  }
-  // SAFEGUARD: ALWAYS pull & merge BEFORE push, so a device with partial/stale
-  // local data (e.g. missing todos or weights) can NEVER wipe those from cloud.
+  // 1) 拉取云端最新（获取乐观锁 sha 与云端各板块数据）
   const remote = await ghFetch();
-  if (remote) {
-    if (mergeRemote(remote)) showToast('已合并云端数据，防止覆盖');
-  } else if (!_lastSyncSha) {
-    // 拉取失败且没有乐观锁（sha）→ 拒绝推送，防止无锁直接覆盖云端数据
-    setSyncStatus('error', '拉取失败，已跳过上传（保护云端数据）');
+  if (!remote && !_lastSyncSha) {
+    setSyncStatus('error', '无法连接云端，上传失败');
     return;
   }
-  const result = await ghPush(getCloudPayload());
+  // 2) 构造上传内容：目标板块用本地覆盖，其他板块保留云端（云端无数据则用本地兜底）
+  const cloud = (remote && remote.syncedAt) ? remote : null;
+  const base = cloud || { todos: state.todos, weights: state.weights, maoyang: state.maoyang };
+  const payload = {
+    todos: section==='todos' ? state.todos : (base.todos||[]),
+    weights: section==='weights' ? state.weights : (base.weights||[]),
+    maoyang: section==='maoyang' ? state.maoyang : (base.maoyang||{periods:{}}),
+    syncedAt: new Date().toISOString() // 精确到毫秒
+  };
+  const result = await ghPush(payload);
+  if (result === true) {
+    if (cloud) mergeRemote(cloud); // 让本地其他板块与云端保持一致
+    _lastLocalHash = getLocalHash();
+    setSyncStatus('synced', '已上传，云端已更新');
+    showToast('✅ 已上传，云端已更新');
+    return;
+  }
   if (result === 'conflict') {
-    // Remote changed while we were away, pull and merge
-    const remote2 = await ghFetch();
-    if (remote2) {
-      mergeRemote(remote2);
-      // Retry push
-      const retryResult = await ghPush(getCloudPayload());
-      if (retryResult === true) {
-        _lastLocalHash = getLocalHash(); setSyncStatus('synced', '已同步');
+    // 云端刚被其他设备改动：重新拉取后重试一次
+    const r2 = await ghFetch();
+    if (r2) {
+      const c2 = r2.syncedAt ? r2 : payload;
+      const retry = {
+        todos: section==='todos' ? state.todos : (c2.todos||[]),
+        weights: section==='weights' ? state.weights : (c2.weights||[]),
+        maoyang: section==='maoyang' ? state.maoyang : (c2.maoyang||{periods:{}}),
+        syncedAt: new Date().toISOString()
+      };
+      const rr = await ghPush(retry);
+      if (rr === true) {
+        if (r2 && r2.syncedAt) mergeRemote(r2);
+        _lastLocalHash = getLocalHash();
+        setSyncStatus('synced', '已上传，云端已更新');
+        showToast('✅ 已上传（重试成功）');
         return;
       }
     }
-    setSyncStatus('error', '冲突，请手动同步');
+    setSyncStatus('error', '冲突，请重试');
     return;
   }
-  if (result === true) {
-    _lastLocalHash = getLocalHash();
-    setSyncStatus('synced', '已同步');
-  } else {
-    // 推送失败：不更新 _lastLocalHash，下次数据变更/自动拉取时会自动重试
-    setSyncStatus('error', '上传失败，稍后自动重试');
-  }
+  setSyncStatus('error', '上传失败，请检查网络后重试');
 }
 
 // 记录时间：优先 updatedAt（修改时间），无则用 createdAt（创建时间），都没有视为 0
@@ -1656,96 +1685,68 @@ function mergeRemote(remote) {
     if (JSON.stringify(merged) !== JSON.stringify(state.maoyang)) { state.maoyang = merged; changed = true; }
   }
   if (changed) {
-    saveState(); // 触发覆盖后的 saveState 会自动调度推送，把合并结果同步回云端
+    saveState(); // 仅保存本地，不再自动上传
     switchPage(state.currentPage);
   }
   return changed;
 }
 
-async function pullFromCloud() {
+// ===== 检查云端更新：打开工作台/手动检查/定时检查时提醒 =====
+// silent=true 时为定时后台检查（轻提醒不弹窗）；false 时弹窗让用户选择"更新"或"拒绝"
+async function checkCloudUpdate(silent) {
   const remote = await ghFetch();
   if (!remote) {
-    if (_cloudEnabled) setSyncStatus('error', '拉取失败');
-    return null;
+    if (!silent) setSyncStatus('error', '无法连接云端');
+    return;
+  }
+  if (!remote.syncedAt) {
+    if (!silent) setSyncStatus('synced', '云端暂无数据');
+    return;
   }
   const rHash = getHashOf(remote);
-  if (rHash === getLocalHash()) { setSyncStatus('synced', '已同步'); return rHash; }
-  if (!remote.syncedAt) { setSyncStatus('synced', '云端无数据'); return null; }
-  const changed = mergeRemote(remote);
-  _lastLocalHash = getLocalHash();
-  setSyncStatus('synced', '已同步');
-  if (changed) showToast('已从云端加载最新数据');
-  return rHash;
+  if (rHash === getLocalHash()) {
+    if (!silent) setSyncStatus('synced', '已同步');
+    return;
+  }
+  // 云端与本地不一致
+  if (_declinedCloudHash === rHash) {
+    if (!silent) setSyncStatus('warning', '已忽略云端更新（本地为准）');
+    return; // 用户已拒绝过这个云端版本，不重复打扰
+  }
+  if (silent) {
+    setSyncStatus('warning', '云端有更新，可手动更新');
+    showToast('🔄 云端有更新，点击"检查更新"可手动同步');
+    return;
+  }
+  // 主动检查 / 打开工作台：弹窗让用户选择 更新 或 拒绝
+  const ok = confirm('检测到云端有更新的数据（云端更新时间：' + (remote.syncedAt||'') + '）。\n\n点击【确定】= 更新本地数据（以最新数据为准合并）\n点击【取消】= 拒绝更新，保留本地数据');
+  if (ok) {
+    const changed = mergeRemote(remote);
+    _lastLocalHash = getLocalHash();
+    _declinedCloudHash = null;
+    if (changed) showToast('✅ 已更新本地数据');
+    setSyncStatus('synced', '已更新');
+  } else {
+    _declinedCloudHash = rHash;
+    setSyncStatus('warning', '已忽略云端更新（本地为准）');
+    showToast('已拒绝更新，保留本地数据');
+  }
 }
 
 async function syncNow() {
-  const token = getGhToken();
-  if (!token) {
-    // Read-only mode: try to pull
-    const remote = await ghFetch();
-    if (remote && remote.syncedAt) {
-      mergeRemote(remote);
-      _lastLocalHash = getLocalHash();
-      setSyncStatus('synced', '已加载云端数据');
-      showToast('已从云端加载数据（只读模式）');
-    } else {
-      setSyncStatus('synced', '云端暂无数据');
-    }
-    return;
-  }
-  _cloudEnabled = true;
-  setSyncStatus('syncing', '同步中...');
-  // Pull first, then push only if local has changes remote doesn't
-  const rHash = await pullFromCloud();
-  // CRITICAL: if pull failed (null), DO NOT push — could wipe cloud data
-  if (rHash === null) {
-    setSyncStatus('error', '拉取失败，已跳过上传（保护云端数据）');
-    return;
-  }
-  if (getLocalHash() !== rHash) {
-    await pushToCloud();
-  } else {
-    setSyncStatus('synced', '已同步');
-  }
+  // 手动检查云端更新：有更新则让用户选择"更新本地"或"拒绝"
+  await checkCloudUpdate(false);
 }
 
-function scheduleSync() {
-  if (_syncTimer) clearTimeout(_syncTimer);
-  _syncTimer = setTimeout(() => pushToCloud(), SYNC_DEBOUNCE);
-}
+// 数据保存：仅写入本地 localStorage，不再自动上传云端
+// 上传改为手动：各板块右上角"确认上传"按钮（confirmUpload）
 
-// Override saveState to trigger cloud sync
-// 注意：_lastLocalHash 只在推送成功时更新；推送失败时保持旧值，
-// 这样下次任何数据变更（或 5 分钟自动拉取）都会自动重新推送，不会丢数据。
-const _originalSaveState = saveState;
-saveState = function() {
-  _originalSaveState();
-  const h = getLocalHash();
-  if (_cloudEnabled && h !== _lastLocalHash) {
-    scheduleSync();
-  }
-};
-
-// Periodic pull
+// Periodic pull: 定时检查云端是否有更新（只读提醒，不自动推送、不自动合并）
 let _pullInterval = null;
 function startAutoPull() {
   if (_pullInterval) clearInterval(_pullInterval);
   _pullInterval = setInterval(async () => {
-    const remote = await ghFetch();
-    if (!remote) return;
-    const rHash = getHashOf(remote);
-    if (rHash !== getLocalHash()) {
-      const changed = mergeRemote(remote);
-      _lastLocalHash = getLocalHash();
-      if (changed) {
-        setSyncStatus('synced', '云端有更新');
-        showToast('🔄 检测到云端数据更新，已自动同步');
-      }
-      // 只要云端与本地不一致就推回合并结果：
-      // - 云端有新数据 → 合并后推回，让所有设备拿到同一版本
-      // - 本地有新数据（之前推送失败）→ 趁这次机会补推上去
-      if (_cloudEnabled) await pushToCloud();
-    }
+    await checkCloudUpdate(true);
   }, PULL_INTERVAL);
 }
 
@@ -1753,27 +1754,15 @@ async function initCloudSync() {
   const token = getGhToken();
   if (token) {
     _cloudEnabled = true;
-    document.getElementById('cloud-sync-info').textContent = '✅ 云端同步已启用';
+    document.getElementById('cloud-sync-info').textContent = '✅ 云端同步已启用（手动上传）';
     setSyncStatus('syncing', '连接中...');
-    await syncNow();
-    startAutoPull();
     document.getElementById('gh-token-input').value = token;
   } else {
     document.getElementById('cloud-sync-info').textContent = '⚠️ 未配置 Token，仅可读取云端数据';
-    // Try pull from cloud without token
-    const remote = await ghFetch();
-    if (remote && remote.syncedAt) {
-      _cloudEnabled = true; // Read-only cloud
-      mergeRemote(remote);
-      _lastLocalHash = getLocalHash();
-      setSyncStatus('synced', '已加载云端数据');
-      document.getElementById('cloud-sync-info').textContent = '📖 只读模式（云端数据已加载，配置 Token 后可写入）';
-    } else {
-      setSyncStatus('synced', '本地模式');
-    }
-    // Start pull even without token
-    startAutoPull();
   }
+  // 打开工作台：检查云端是否有更新，提醒用户手动更新或拒绝
+  startAutoPull();
+  await checkCloudUpdate(false);
 }
 
 // ============ INIT ============
