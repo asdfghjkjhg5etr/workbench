@@ -5,12 +5,12 @@
     "periods": {
       "2026-08": [
         {
-          "name": "持续回款",
-          "item": "酷奇大众80头",
+          "name": "酷奇",
+          "item": "大众80头",
           "orderDate": "2026-08-12",
           "cost": "10.3",
           "advance": "",
-          "settlement": "5.5",
+          "settlement": "",
           "shipping": "",
           "tracking": "",
           "payment": "",
@@ -41,12 +41,12 @@
           "settleDate": ""
         },
         {
-          "name": "持续",
-          "item": "大众",
-          "orderDate": "2026-08-13",
-          "cost": "9.8",
+          "name": "持续回款",
+          "item": "酷奇大众80头",
+          "orderDate": "2026-08-12",
+          "cost": "10.3",
           "advance": "",
-          "settlement": "",
+          "settlement": "5.5",
           "shipping": "",
           "tracking": "",
           "payment": "",
@@ -87,18 +87,6 @@
           "tracking": "",
           "payment": "",
           "settleDate": "2026-08-13"
-        },
-        {
-          "name": "酷奇",
-          "item": "大众80头",
-          "orderDate": "2026-08-12",
-          "cost": "10.3",
-          "advance": "",
-          "settlement": "",
-          "shipping": "",
-          "tracking": "",
-          "payment": "",
-          "settleDate": ""
         },
         {
           "name": "持续",
@@ -162,36 +150,21 @@
         },
         {
           "name": "",
-          "item": "抖音代买",
+          "item": "快手700",
           "orderDate": "2026-08-14",
-          "cost": "",
+          "cost": "8",
           "advance": "",
-          "settlement": "5",
+          "settlement": "15",
           "shipping": "",
           "tracking": "",
           "payment": "",
           "settleDate": "",
-          "id": "mst1xc0e7qtlte",
-          "createdAt": "2026-08-14T14:37:49.454Z",
-          "updatedAt": "2026-08-14T14:37:49.454Z"
-        },
-        {
-          "name": "",
-          "item": "PDD刷单",
-          "orderDate": "2026-08-14",
-          "cost": "74.5",
-          "advance": "",
-          "settlement": "",
-          "shipping": "",
-          "tracking": "",
-          "payment": "",
-          "settleDate": "",
-          "id": "mst1yt9us3hyp5",
-          "createdAt": "2026-08-14T14:38:58.482Z",
-          "updatedAt": "2026-08-14T14:38:58.482Z"
+          "id": "mst3nar3ayuvth",
+          "createdAt": "2026-08-14T15:26:00.495Z",
+          "updatedAt": "2026-08-14T15:26:00.495Z"
         }
       ]
     }
   },
-  "syncedAt": "2026-08-14T14:40:30.303Z"
+  "syncedAt": "2026-08-14T15:26:13.142Z"
 }
