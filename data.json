@@ -1,6 +1,20 @@
 {
   "todos": [],
-  "weights": [],
+  "weights": [
+    {
+      "date": "2026-08-06",
+      "period": "before",
+      "value": 111,
+      "createdAt": "2026-08-06T15:25:47.339Z"
+    },
+    {
+      "date": "2026-08-16",
+      "period": "after",
+      "value": 77,
+      "createdAt": "2026-08-16T03:42:57.971Z",
+      "updatedAt": "2026-08-16T03:42:57.971Z"
+    }
+  ],
   "maoyang": {
     "periods": {
       "2026-08": [
@@ -283,5 +297,6 @@
       ]
     }
   },
-  "syncedAt": "2026-08-15T16:37:23.610Z"
+  "height": 180,
+  "syncedAt": "2026-08-16T03:43:31.692Z"
 }
