@@ -125,14 +125,14 @@
           "project": "大众",
           "item": "辉100头",
           "orderDate": "2026-08-15",
-          "cost": "11.45",
+          "cost": "11.5",
           "extra": "",
           "settlement": "",
           "tracking": "",
           "settleDate": "",
           "id": "msvbbdxw0uitpi",
           "createdAt": "2026-08-16T04:36:14.036Z",
-          "updatedAt": "2026-08-16T04:36:14.036Z"
+          "updatedAt": "2026-08-16T14:29:09.745Z"
         },
         {
           "project": "大众",
@@ -263,11 +263,24 @@
           "id": "msvbopwvyxx93d",
           "createdAt": "2026-08-16T04:46:36.079Z",
           "updatedAt": "2026-08-16T04:46:36.079Z"
+        },
+        {
+          "project": "大众",
+          "item": "辉100头",
+          "orderDate": "2026-08-16",
+          "cost": "11.5",
+          "extra": "",
+          "settlement": "",
+          "tracking": "",
+          "settleDate": "",
+          "id": "msvwi6yxbw7mqo",
+          "createdAt": "2026-08-16T14:29:23.529Z",
+          "updatedAt": "2026-08-16T14:29:23.529Z"
         }
       ]
     }
   },
   "height": null,
   "clearedAt": "2026-08-16T04:23:33.973Z",
-  "syncedAt": "2026-08-16T12:20:50.264Z"
+  "syncedAt": "2026-08-16T14:29:42.349Z"
 }
