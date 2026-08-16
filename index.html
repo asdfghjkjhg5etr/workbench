@@ -1753,8 +1753,8 @@ function renderMaoyangList() {
       g.items.forEach(item => rows.push({type:'normal', ...item}));
     }
   });
-  // 升序：旧的下单日期在前，新的在后（8-14 < 8-15 < 8-16）
-  rows.sort((a,b)=> (a.time || a.latestTime || '').localeCompare(b.time || b.latestTime || ''));
+  // 降序：最新下单日期在最上（8-16 > 8-15 > 8-14）
+  rows.sort((a,b)=> (b.time || b.latestTime || '').localeCompare(a.time || a.latestTime || ''));
 
   const tableHead = `<thead><tr><th>利润</th><th>项目</th><th>物品</th><th>下单日期</th><th>成本</th><th>额外支出</th><th>回款</th><th>备注</th><th>结账日期</th><th>操作</th></tr></thead>`;
   const renderNormalRow = ({r,i}) => {
