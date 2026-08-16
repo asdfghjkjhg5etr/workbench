@@ -373,9 +373,19 @@ tr:hover td { background: #f8faff; }
   display: inline-block; padding: 4px 10px; border-radius: 6px;
   font-size: 12px; font-weight: 600;
 }
-.time-morning { background: #fef3c7; color: #92400e; }
-.time-evening { background: #dbeafe; color: #1e40af; }
+.time-after { background: #fef3c7; color: #92400e; }
+.time-before { background: #dbeafe; color: #1e40af; }
 .chart-container { position: relative; height: 320px; margin: 16px 0; }
+#weight-bmi-display { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.bmi-under { color: #3b82f6; }
+.bmi-healthy { color: #22c55e; }
+.bmi-over { color: #f59e0b; }
+.bmi-obese { color: #ef4444; }
+.bmi-tag { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; background: currentColor; color: #fff; }
+.bmi-under.bmi-tag { background: #3b82f6; }
+.bmi-healthy.bmi-tag { background: #22c55e; }
+.bmi-over.bmi-tag { background: #f59e0b; }
+.bmi-obese.bmi-tag { background: #ef4444; }
 .month-selector { display: flex; gap: 8px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
 .month-selector button {
   padding: 6px 16px; border: 1.5px solid var(--border); border-radius: 20px;
@@ -708,7 +718,7 @@ tr:hover td { background: #f8faff; }
   <div class="page-header">
     <div class="header-left">
       <h2>⚖️ 体重</h2>
-      <p>早晚记录，月度追踪</p>
+      <p id="weight-bmi-display">记录睡前/睡后体重，追踪睡眠消耗</p>
     </div>
     <div class="header-actions">
       <button class="btn btn-primary btn-sm" onclick="confirmUpload('weights')">⬆️ 确认上传</button>
@@ -718,8 +728,9 @@ tr:hover td { background: #f8faff; }
     <h3 style="margin-bottom:12px">记录体重</h3>
     <div class="weight-entry-row">
       <div><label>日期</label><input type="date" id="weight-date"></div>
-      <div><label>时段</label><select id="weight-period"><option value="morning">🌅 早晨</option><option value="evening">🌙 晚上</option></select></div>
+      <div><label>时段</label><select id="weight-period"><option value="after">☀️ 睡后</option><option value="before">🌙 睡前</option></select></div>
       <div><label>体重 (kg)</label><input type="number" id="weight-value" placeholder="例: 65.0" step="0.1" min="20" max="300" inputmode="decimal"></div>
+      <div><label>身高 (cm)</label><input type="number" id="weight-height" placeholder="例: 175" step="0.1" min="50" max="250" inputmode="decimal" onchange="saveHeight()"></div>
       <button class="btn btn-primary" onclick="addWeight()">记录</button>
     </div>
   </div>
@@ -881,7 +892,7 @@ tr:hover td { background: #f8faff; }
 // ============ STATE ============
 const STORAGE_KEY = 'allen_workbench';
 let state = {
-  todos: [], weights: [],
+  todos: [], weights: [], height: null,
   maoyang: { periods: {} },
   currentPeriod: '',
   currentPage: 'news'
@@ -896,14 +907,22 @@ function loadState() {
       const parsed = JSON.parse(saved);
       state.todos = parsed.todos || [];
       state.weights = parsed.weights || [];
+      state.height = parsed.height || null;
       state.maoyang = parsed.maoyang || { periods: {} };
+      migrateWeights();
       migrateMaoyang();
     }
   } catch(e) {}
 }
+function migrateWeights(arr) {
+  (arr || state.weights).forEach(w => {
+    if (w.period === 'morning') w.period = 'after';
+    else if (w.period === 'evening') w.period = 'before';
+  });
+}
 function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify({
-    todos: state.todos, weights: state.weights, maoyang: state.maoyang,
+    todos: state.todos, weights: state.weights, maoyang: state.maoyang, height: state.height,
   }));
 }
 
@@ -1119,25 +1138,63 @@ function deleteTodo(i) { if (confirm('确定删除？')) { state.todos.splice(i,
 // ============ WEIGHT ============
 function renderWeightPage() {
   const cp = getCurrentPeriodKey();
-  setWeightDateToday(); autoDetectPeriod(); renderMonthSelector();
-  renderWeightChart(cp); renderWeightStats(cp); renderWeightRecords(cp); renderWeightAdvice(cp);
+  setWeightDateToday(); autoDetectPeriod(); loadHeight(); renderMonthSelector();
+  renderWeightChart(cp); renderWeightStats(cp); renderWeightRecords(cp); renderWeightAdvice(cp); renderBMI();
 }
 function setWeightDateToday() {
   const n = new Date(); document.getElementById('weight-date').value = `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;
 }
-function autoDetectPeriod() { document.getElementById('weight-period').value = new Date().getHours()<12 ? 'morning':'evening'; }
+function autoDetectPeriod() {
+  const h = new Date().getHours();
+  document.getElementById('weight-period').value = (h >= 22 || h < 6) ? 'before' : 'after';
+}
+function saveHeight() {
+  const h = parseFloat(document.getElementById('weight-height').value);
+  if (h && h >= 50 && h <= 250) {
+    state.height = h;
+    saveState();
+    renderBMI();
+  }
+}
+function loadHeight() {
+  if (state.height) document.getElementById('weight-height').value = state.height;
+}
+function renderBMI() {
+  const c = document.getElementById('weight-bmi-display');
+  if (!c) return;
+  const heightCm = state.height;
+  if (!heightCm) {
+    c.innerHTML = '记录睡前/睡后体重，输入身高后自动计算 BMI';
+    return;
+  }
+  const sorted = [...state.weights].sort((a,b)=>new Date(b.date+(b.period==='after'?'T08:00':'T22:00'))-new Date(a.date+(a.period==='after'?'T08:00':'T22:00')));
+  const latest = sorted[0];
+  if (!latest) {
+    c.innerHTML = `身高 ${heightCm} cm · 记录体重后计算 BMI`;
+    return;
+  }
+  const bmi = latest.value / Math.pow(heightCm/100, 2);
+  const bmiStr = bmi.toFixed(1);
+  let tag = '', cls = '';
+  if (bmi < 18.5) { tag = '偏瘦'; cls = 'bmi-under'; }
+  else if (bmi < 24) { tag = '健康'; cls = 'bmi-healthy'; }
+  else if (bmi < 28) { tag = '超重'; cls = 'bmi-over'; }
+  else { tag = '肥胖'; cls = 'bmi-obese'; }
+  c.innerHTML = `身高 ${heightCm} cm · 最新 ${latest.value.toFixed(1)} kg · BMI <span class="${cls}">${bmiStr}</span> <span class="${cls} bmi-tag">${tag}</span>`;
+}
 function addWeight() {
   const date = document.getElementById('weight-date').value;
   const period = document.getElementById('weight-period').value;
   const val = parseFloat(document.getElementById('weight-value').value);
   if (!date) { showToast('请选择日期'); return; }
   if (!val||val<20||val>300) { showToast('请输入合理的体重(20-300kg)'); return; }
+  saveHeight();
   const now = new Date().toISOString();
   state.weights.push({ date, period, value:val, createdAt:now, updatedAt:now });
-  state.weights.sort((a,b)=>new Date(a.date+(a.period==='morning'?'T08:00':'T20:00'))-new Date(b.date+(b.period==='morning'?'T08:00':'T20:00')));
+  state.weights.sort((a,b)=>new Date(a.date+(a.period==='after'?'T08:00':'T22:00'))-new Date(b.date+(b.period==='after'?'T08:00':'T22:00')));
   document.getElementById('weight-value').value=''; saveState();
   const pk = getPeriodKey(date);
-  renderMonthSelector(pk); renderWeightChart(pk); renderWeightStats(pk); renderWeightRecords(pk); renderWeightAdvice(pk);
+  renderMonthSelector(pk); renderWeightChart(pk); renderWeightStats(pk); renderWeightRecords(pk); renderWeightAdvice(pk); renderBMI();
   showToast('已记录');
 }
 function getWeightMonthData(pk) {
@@ -1161,19 +1218,19 @@ function renderWeightChart(pk) {
   if (weightChart) weightChart.destroy();
   const [yr,mo] = pk.split('-').map(Number);
   const days = new Date(yr,mo,0).getDate();
-  const labels=[], morning=[], evening=[];
-  for (let d=1; d<=days; d++) {
-    const ds = `${yr}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    labels.push(`${mo}/${d}`);
-    const m = data.find(w=>w.date===ds&&w.period==='morning');
-    const e = data.find(w=>w.date===ds&&w.period==='evening');
-    morning.push(m?m.value:null); evening.push(e?e.value:null);
-  }
-  weightChart = new Chart(ctx, {
-    type:'line', data:{ labels, datasets:[
-      { label:'早晨体重', data:morning, borderColor:'#f59e0b', backgroundColor:'rgba(245,158,11,0.08)', tension:0.35, pointRadius:3, pointHoverRadius:6, borderWidth:2, fill:true },
-      { label:'晚上体重', data:evening, borderColor:'#6366f1', backgroundColor:'rgba(99,102,241,0.08)', tension:0.35, pointRadius:3, pointHoverRadius:6, borderWidth:2, fill:true }
-    ]},
+      const labels=[], after=[], before=[];
+      for (let d=1; d<=days; d++) {
+        const ds = `${yr}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        labels.push(`${mo}/${d}`);
+        const a = data.find(w=>w.date===ds&&w.period==='after');
+        const b = data.find(w=>w.date===ds&&w.period==='before');
+        after.push(a?a.value:null); before.push(b?b.value:null);
+      }
+      weightChart = new Chart(ctx, {
+        type:'line', data:{ labels, datasets:[
+          { label:'睡后体重', data:after, borderColor:'#f59e0b', backgroundColor:'rgba(245,158,11,0.08)', tension:0.35, pointRadius:3, pointHoverRadius:6, borderWidth:2, fill:true },
+          { label:'睡前体重', data:before, borderColor:'#6366f1', backgroundColor:'rgba(99,102,241,0.08)', tension:0.35, pointRadius:3, pointHoverRadius:6, borderWidth:2, fill:true }
+        ]},
     options:{
       responsive:true, maintainAspectRatio:false,
       interaction:{intersect:false,mode:'index'},
@@ -1188,16 +1245,16 @@ function renderWeightChart(pk) {
 function renderWeightStats(pk) {
   const data = getWeightMonthData(pk), c = document.getElementById('weight-stats');
   if (data.length===0) { c.innerHTML=''; return; }
-  const m = data.filter(w=>w.period==='morning'), e = data.filter(w=>w.period==='evening');
+  const a = data.filter(w=>w.period==='after'), b = data.filter(w=>w.period==='before');
   const vals = data.map(w=>w.value);
-  const avgM = m.length?(m.reduce((s,w)=>s+w.value,0)/m.length).toFixed(1):'-';
-  const avgE = e.length?(e.reduce((s,w)=>s+w.value,0)/e.length).toFixed(1):'-';
+  const avgA = a.length?(a.reduce((s,w)=>s+w.value,0)/a.length).toFixed(1):'-';
+  const avgB = b.length?(b.reduce((s,w)=>s+w.value,0)/b.length).toFixed(1):'-';
   const min = Math.min(...vals).toFixed(1), max = Math.max(...vals).toFixed(1);
   const latest = data[data.length-1];
   c.innerHTML = `
-    <div class="stat-card"><div class="stat-value">${latest?latest.value.toFixed(1):'-'} kg</div><div class="stat-label">最新 (${latest?.period==='morning'?'早':'晚'})</div></div>
-    <div class="stat-card success"><div class="stat-value">${avgM} kg</div><div class="stat-label">月均早晨 (${m.length}次)</div></div>
-    <div class="stat-card success"><div class="stat-value">${avgE} kg</div><div class="stat-label">月均晚上 (${e.length}次)</div></div>
+    <div class="stat-card"><div class="stat-value">${latest?latest.value.toFixed(1):'-'} kg</div><div class="stat-label">最新 (${latest?.period==='after'?'睡后':'睡前'})</div></div>
+    <div class="stat-card success"><div class="stat-value">${avgA} kg</div><div class="stat-label">月均睡后 (${a.length}次)</div></div>
+    <div class="stat-card success"><div class="stat-value">${avgB} kg</div><div class="stat-label">月均睡前 (${b.length}次)</div></div>
     <div class="stat-card warning"><div class="stat-value">${min} ~ ${max} kg</div><div class="stat-label">月度区间</div></div>
   `;
 }
@@ -1205,31 +1262,31 @@ function renderWeightRecords(pk) {
   const data = getWeightMonthData(pk), c = document.getElementById('weight-records');
   if (data.length===0) { c.innerHTML='<div class="empty-state"><div class="empty-state-icon">⚖️</div><p>本月暂无记录</p></div>'; return; }
   const cur = getCurrentPeriodKey(), isCur = pk===cur;
-  const sorted = [...data].sort((a,b)=>new Date(b.date+(b.period==='morning'?'T08:00':'T20:00'))-new Date(a.date+(a.period==='morning'?'T08:00':'T20:00')));
+  const sorted = [...data].sort((a,b)=>new Date(b.date+(b.period==='after'?'T08:00':'T22:00'))-new Date(a.date+(a.period==='after'?'T08:00':'T22:00')));
   if (isCur) {
     c.innerHTML = sorted.map(w=>`
       <div class="weight-record">
         <span>${formatDate(w.date)}</span>
-        <span class="time-badge ${w.period==='morning'?'time-morning':'time-evening'}">${w.period==='morning'?'🌅 早':'🌙 晚'}</span>
+        <span class="time-badge ${w.period==='after'?'time-after':'time-before'}">${w.period==='after'?'☀️ 睡后':'🌙 睡前'}</span>
         <span style="font-weight:600">${w.value.toFixed(1)} kg</span>
         <button class="btn btn-danger btn-sm" onclick="deleteWeight('${w.date}','${w.period}')">删除</button>
       </div>`).join('');
   } else {
-    const m = data.filter(w=>w.period==='morning'), e = data.filter(w=>w.period==='evening');
+    const a = data.filter(w=>w.period==='after'), b = data.filter(w=>w.period==='before');
     const vals = data.map(w=>w.value);
     const avg = vals.length?(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1):'-';
     c.innerHTML = `
       <div style="padding:16px;text-align:center">
         <p style="font-size:15px;margin-bottom:12px"><strong>${pk.replace('-','年')}月 总结</strong></p>
         <div class="stats-grid">
-          <div class="stat-card"><div class="stat-value">${m.length}</div><div class="stat-label">早晨记录</div></div>
-          <div class="stat-card"><div class="stat-value">${e.length}</div><div class="stat-label">晚上记录</div></div>
+          <div class="stat-card"><div class="stat-value">${a.length}</div><div class="stat-label">睡后记录</div></div>
+          <div class="stat-card"><div class="stat-value">${b.length}</div><div class="stat-label">睡前记录</div></div>
           <div class="stat-card success"><div class="stat-value">${avg} kg</div><div class="stat-label">月均体重</div></div>
           <div class="stat-card warning"><div class="stat-value">${data.length}</div><div class="stat-label">总记录数</div></div>
         </div>
       </div>
       <hr style="border:none;border-top:1px solid var(--border);margin:8px 0">
-      ${sorted.map(w=>`<div class="weight-record"><span>${formatDate(w.date)}</span><span class="time-badge ${w.period==='morning'?'time-morning':'time-evening'}">${w.period==='morning'?'🌅 早':'🌙 晚'}</span><span style="font-weight:600">${w.value.toFixed(1)} kg</span></div>`).join('')}
+      ${sorted.map(w=>`<div class="weight-record"><span>${formatDate(w.date)}</span><span class="time-badge ${w.period==='after'?'time-after':'time-before'}">${w.period==='after'?'☀️ 睡后':'🌙 睡前'}</span><span style="font-weight:600">${w.value.toFixed(1)} kg</span></div>`).join('')}
     `;
   }
 }
@@ -1237,7 +1294,7 @@ function deleteWeight(date,period) {
   if (!confirm('确定删除？')) return;
   state.weights = state.weights.filter(w=>!(w.date===date&&w.period===period));
   saveState(); const pk = getPeriodKey(date);
-  renderWeightChart(pk); renderWeightStats(pk); renderWeightRecords(pk); renderMonthSelector(pk); renderWeightAdvice(pk);
+  renderWeightChart(pk); renderWeightStats(pk); renderWeightRecords(pk); renderMonthSelector(pk); renderWeightAdvice(pk); renderBMI();
   showToast('已删除');
 }
 
@@ -1272,7 +1329,7 @@ function renderWeightAdvice(pk) {
   }
 
   // 按时间排序
-  const sorted = [...data].sort((a,b) => new Date(a.date + (a.period==='morning'?'T08:00':'T20:00')) - new Date(b.date + (b.period==='morning'?'T08:00':'T20:00')));
+  const sorted = [...data].sort((a,b) => new Date(a.date + (a.period==='after'?'T08:00':'T22:00')) - new Date(b.date + (b.period==='after'?'T08:00':'T22:00')));
   const latest = sorted[sorted.length - 1];
   const first = sorted[0];
   const totalChange = latest.value - first.value;
@@ -1294,10 +1351,10 @@ function renderWeightAdvice(pk) {
   const consistency = recordedDates.size / elapsedDays;
 
   // 早晚差异
-  const morningVals = data.filter(w => w.period === 'morning').map(w => w.value);
-  const eveningVals = data.filter(w => w.period === 'evening').map(w => w.value);
-  const avgMorning = morningVals.length ? morningVals.reduce((a,b)=>a+b,0) / morningVals.length : null;
-  const avgEvening = eveningVals.length ? eveningVals.reduce((a,b)=>a+b,0) / eveningVals.length : null;
+  const afterVals = data.filter(w => w.period === 'after').map(w => w.value);
+  const beforeVals = data.filter(w => w.period === 'before').map(w => w.value);
+  const avgAfter = afterVals.length ? afterVals.reduce((a,b)=>a+b,0) / afterVals.length : null;
+  const avgBefore = beforeVals.length ? beforeVals.reduce((a,b)=>a+b,0) / beforeVals.length : null;
 
   // 波动范围
   const vals = data.map(w => w.value);
@@ -1348,8 +1405,8 @@ function renderWeightAdvice(pk) {
   }
 
   // 4. 早晚差异
-  if (avgMorning !== null && avgEvening !== null) {
-    const diff = avgEvening - avgMorning;
+  if (avgAfter !== null && avgBefore !== null) {
+    const diff = avgBefore - avgAfter;
     if (diff > 2.0) {
       advices.push({ type:'warning', icon:'🌙', title:'早晚差异偏大', text:`平均早晚差 ${diff.toFixed(1)}kg，晚餐可能吃得偏多。建议晚餐七分饱、睡前2小时不进食，早上空腹称重更准确。` });
     } else if (diff > 0) {
@@ -1624,7 +1681,7 @@ function openSyncPanel() { document.getElementById('sync-modal').classList.add('
 function closeSyncPanel() { document.getElementById('sync-modal').classList.remove('show'); }
 
 function exportData() {
-  const json = JSON.stringify({ todos:state.todos, weights:state.weights, maoyang:state.maoyang, }, null, 2);
+  const json = JSON.stringify({ todos:state.todos, weights:state.weights, maoyang:state.maoyang, height:state.height }, null, 2);
   const blob = new Blob([json], { type:'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a'); a.href = url;
@@ -1643,8 +1700,9 @@ function importData(input) {
       const data = JSON.parse(e.target.result);
       state.todos = data.todos || [];
       state.weights = data.weights || [];
+      state.height = data.height || null;
       state.maoyang = data.maoyang || { periods:{} };
-      migrateMaoyang();
+      migrateWeights(); migrateMaoyang();
       saveState();
       switchPage(state.currentPage);
       showToast('数据已导入');
@@ -1654,7 +1712,7 @@ function importData(input) {
 }
 
 function generateSyncCode() {
-  const json = JSON.stringify({ todos:state.todos, weights:state.weights, maoyang:state.maoyang, });
+  const json = JSON.stringify({ todos:state.todos, weights:state.weights, maoyang:state.maoyang, height:state.height });
   const code = btoa(unescape(encodeURIComponent(json)));
   document.getElementById('sync-code-area').style.display = 'block';
   document.getElementById('sync-code-text').textContent = code;
@@ -1675,8 +1733,9 @@ function applySyncCode() {
     const data = JSON.parse(json);
     state.todos = data.todos || [];
     state.weights = data.weights || [];
+    state.height = data.height || null;
     state.maoyang = data.maoyang || { periods:{} };
-    migrateMaoyang();
+    migrateWeights(); migrateMaoyang();
     saveState();
     switchPage(state.currentPage);
     document.getElementById('sync-code-input').value = '';
@@ -1761,7 +1820,7 @@ async function ghPush(content) {
 
 function getHashOf(obj) {
   return btoa(unescape(encodeURIComponent(JSON.stringify({
-    todos: obj.todos, weights: obj.weights, maoyang: obj.maoyang
+    todos: obj.todos, weights: obj.weights, maoyang: obj.maoyang, height: obj.height
   })))).slice(0, 50);
 }
 function getLocalHash() {
@@ -1792,11 +1851,12 @@ async function confirmUpload(section) {
   }
   // 2) 构造上传内容：目标板块用本地覆盖，其他板块保留云端（云端无数据则用本地兜底）
   const cloud = (remote && remote.syncedAt) ? remote : null;
-  const base = cloud || { todos: state.todos, weights: state.weights, maoyang: state.maoyang };
+  const base = cloud || { todos: state.todos, weights: state.weights, maoyang: state.maoyang, height: state.height };
   const payload = {
     todos: section==='todos' ? state.todos : (base.todos||[]),
     weights: section==='weights' ? state.weights : (base.weights||[]),
     maoyang: section==='maoyang' ? state.maoyang : (base.maoyang||{periods:{}}),
+    height: base.height || state.height || null,
     syncedAt: new Date().toISOString() // 精确到毫秒
   };
   const result = await ghPush(payload);
@@ -1816,6 +1876,7 @@ async function confirmUpload(section) {
         todos: section==='todos' ? state.todos : (c2.todos||[]),
         weights: section==='weights' ? state.weights : (c2.weights||[]),
         maoyang: section==='maoyang' ? state.maoyang : (c2.maoyang||{periods:{}}),
+        height: c2.height || state.height || null,
         syncedAt: new Date().toISOString()
       };
       const rr = await ghPush(retry);
@@ -1869,7 +1930,12 @@ function mergeRemote(remote) {
   // weights: 按 createdAt/date+period 去重，同一记录取较新版本
   if (Array.isArray(remote.weights)) {
     const merged = mergeRecords(state.weights, remote.weights, w => w.createdAt || (w.date+'|'+w.period));
+    migrateWeights(merged);
     if (JSON.stringify(merged) !== JSON.stringify(state.weights)) { state.weights = merged; changed = true; }
+  }
+  // height: 云端较新时采用云端身高
+  if (remote.height && (!state.height || remote.height !== state.height)) {
+    state.height = remote.height; changed = true;
   }
   // maoyang: 按 id（老数据用内容）去重合并，同一记录取较新版本
   if (remote.maoyang && remote.maoyang.periods) {
@@ -1926,7 +1992,7 @@ function describeTodo(r){ return (r.done ? '✓ ' : '') + (r.text || '(无内容
 function describeWeight(r){
   let ds = '?';
   if (r.date) { const d = new Date(r.date); if(!isNaN(d)) ds = (d.getMonth()+1)+'-'+d.getDate(); }
-  const p = r.period==='morning' ? '晨' : (r.period==='evening' ? '晚' : '');
+  const p = r.period==='after' ? '睡后' : (r.period==='before' ? '睡前' : '');
   return ds + ' ' + p + ' ' + (r.value!=null ? r.value : '?') + 'kg';
 }
 function describeMaoyang(r){
