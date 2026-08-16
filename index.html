@@ -1420,6 +1420,7 @@ function renderWeightChart(pk) {
         const b = data.find(w=>w.date===ds&&w.period==='before');
         after.push(a?a.value:null); before.push(b?b.value:null);
       }
+      if (typeof Chart === 'undefined') { return; } // CDN 图表库加载失败时跳过画图，不影响其他功能
       weightChart = new Chart(ctx, {
         type:'line', data:{ labels, datasets:[
           { label:'睡后体重', data:after, borderColor:'#f59e0b', backgroundColor:'rgba(245,158,11,0.08)', tension:0.35, pointRadius:3, pointHoverRadius:6, borderWidth:2, fill:true },
