@@ -871,6 +871,11 @@ tr:hover td { background: #f8faff; }
       </div>
       <p style="font-size:12px;color:var(--text-muted);margin-top:8px" id="cloud-sync-info">未配置云端同步</p>
     </div>
+    <div class="sync-section" style="border:1px solid var(--danger);background:#fef2f2">
+      <h4 style="color:var(--danger)">🗑️ 清空全部数据</h4>
+      <p>清空本机的待办、体重、羊毛、身高数据，并同步清空云端。其他设备打开工作台时会提示同步清空。<strong style="color:var(--danger)">此操作不可恢复，建议先下载数据文件备份。</strong></p>
+      <button class="btn btn-sm" style="background:var(--danger);color:#fff;border-color:var(--danger)" onclick="clearAllData()">🗑️ 清空全部数据</button>
+    </div>
     <div class="modal-actions">
       <button class="btn btn-outline" onclick="closeSyncPanel()">关闭</button>
     </div>
@@ -945,6 +950,7 @@ function loadState() {
       state.weights = parsed.weights || [];
       state.height = parsed.height || null;
       state.maoyang = parsed.maoyang || { periods: {} };
+      state.clearedAt = parsed.clearedAt || null;
       migrateWeights();
       migrateMaoyang();
     }
@@ -959,6 +965,7 @@ function migrateWeights(arr) {
 function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify({
     todos: state.todos, weights: state.weights, maoyang: state.maoyang, height: state.height,
+    clearedAt: state.clearedAt || null,
   }));
 }
 
@@ -2071,6 +2078,7 @@ async function confirmUpload(section) {
     weights: section==='weights' ? state.weights : (base.weights||[]),
     maoyang: section==='maoyang' ? state.maoyang : (base.maoyang||{periods:{}}),
     height: base.height || state.height || null,
+    clearedAt: (cloud && cloud.clearedAt) || state.clearedAt || null,
     syncedAt: new Date().toISOString() // 精确到毫秒
   };
   const result = await ghPush(payload);
@@ -2091,6 +2099,7 @@ async function confirmUpload(section) {
         weights: section==='weights' ? state.weights : (c2.weights||[]),
         maoyang: section==='maoyang' ? state.maoyang : (c2.maoyang||{periods:{}}),
         height: c2.height || state.height || null,
+        clearedAt: (c2 && c2.clearedAt) || state.clearedAt || null,
         syncedAt: new Date().toISOString()
       };
       const rr = await ghPush(retry);
@@ -2311,6 +2320,46 @@ function declineCloudUpdate() {
   showToast('已拒绝，黄灯常亮提醒（可随时手动更新）');
 }
 
+// ===== 清空全部数据（本地 + 云端） =====
+// clearedAt 标记随云端传播：其他设备检测到更新的 clearedAt 时提示同步清空
+function applyLocalClear(clearedAt) {
+  state.todos = [];
+  state.weights = [];
+  state.height = null;
+  state.maoyang = { periods: {} };
+  state.clearedAt = clearedAt;
+  saveState();
+  switchPage(state.currentPage);
+}
+async function clearAllData() {
+  if (!confirm('⚠️ 此操作将清空本机全部数据（待办、体重、羊毛、身高），并同步清空云端！\n\n其他设备打开工作台时会提示同步清空。\n\n确定要继续吗？')) return;
+  if (!confirm('再次确认：清空后无法恢复，建议先【下载数据文件】备份。\n\n真的要清空全部数据吗？')) return;
+  const clearedAt = new Date().toISOString();
+  applyLocalClear(clearedAt);
+  if (!getGhToken()) {
+    setSyncStatus('warning', '已清空本机（未配置 Token，云端未清空）');
+    showToast('✅ 本机数据已清空（未配置 Token，云端未清空）');
+    return;
+  }
+  setSyncStatus('syncing', '清空云端中...');
+  await ghFetch(); // 获取云端最新 sha（乐观锁）
+  const payload = { todos: [], weights: [], maoyang: { periods: {} }, height: null, clearedAt, syncedAt: clearedAt };
+  let result = await ghPush(payload);
+  if (result === 'conflict') {
+    await ghFetch();
+    result = await ghPush(payload);
+  }
+  if (result === true) {
+    _lastLocalHash = getLocalHash();
+    _declinedCloudHash = null;
+    setSyncStatus('synced', '已清空（本地+云端）');
+    showToast('✅ 已清空全部数据（本地+云端）');
+  } else {
+    setSyncStatus('error', '本机已清空，云端清空失败');
+    showToast('⚠️ 本机已清空，但云端清空失败，请重试');
+  }
+}
+
 // ===== 检查云端更新：打开工作台/手动检查/定时检查时提醒 =====
 // silent=true 定时后台检查（轻提醒不弹窗）；force=true 手动触发，跳过"已拒绝"标记强制弹窗
 async function checkCloudUpdate(silent, force) {
@@ -2321,6 +2370,20 @@ async function checkCloudUpdate(silent, force) {
   }
   if (!remote.syncedAt) {
     if (!silent) setSyncStatus('synced', '云端暂无数据');
+    return;
+  }
+  // 云端发起的全量清空：提示各设备同步清空本地数据
+  if (remote.clearedAt && (!state.clearedAt || remote.clearedAt > state.clearedAt)) {
+    if (silent) { setSyncStatus('warning', '云端已清空全部数据，点"检查更新"处理'); return; }
+    if (confirm('☁️ 云端数据已于 ' + fmtSyncTime(remote.clearedAt) + ' 被全部清空。\n\n是否同步清空本机数据？')) {
+      applyLocalClear(remote.clearedAt);
+      _lastLocalHash = getLocalHash();
+      _declinedCloudHash = null;
+      setSyncStatus('synced', '已同步清空');
+      showToast('✅ 本机数据已同步清空');
+    } else {
+      setSyncStatus('warning', '云端已清空，本机保留数据');
+    }
     return;
   }
   const rHash = getHashOf(remote);
