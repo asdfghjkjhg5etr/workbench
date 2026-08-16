@@ -946,6 +946,16 @@ let state = {
 window.allNews = [];
 window.currentNewsFilter = 'all';
 
+// 超时信号兼容层：老移动端浏览器（iOS<15.4 / 老安卓 WebView）无 AbortSignal.timeout
+function timeoutSignal(ms) {
+  try { if (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) return AbortSignal.timeout(ms); } catch(e) {}
+  try {
+    const c = new AbortController();
+    setTimeout(() => { try { c.abort(); } catch(e) {} }, ms);
+    return c.signal;
+  } catch(e) { return undefined; }
+}
+
 function loadState() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -1117,7 +1127,7 @@ async function fetchRssNews() {
   ];
   for (const src of sources) {
     try {
-      const resp = await fetch(src.url, { signal: AbortSignal.timeout(8000) });
+      const resp = await fetch(src.url, { signal: timeoutSignal(8000) });
       if (!resp.ok) continue;
       const xml = await resp.text();
       const doc = new DOMParser().parseFromString(xml, 'text/xml');
@@ -2046,18 +2056,24 @@ function setSyncStatus(cls, text) {
   if (t) t.textContent = text;
 }
 
+let _lastFetchError = ''; // 最近一次云端读取失败原因（用于诊断）
 async function ghFetch() {
   const headers = {};
   const token = getGhToken();
   if (token) headers['Authorization'] = 'Bearer ' + token;
   try {
-    const resp = await fetch(GH_API, { headers, signal: AbortSignal.timeout(8000) });
-    if (!resp.ok) return null;
+    const resp = await fetch(GH_API, { headers, signal: timeoutSignal(8000) });
+    if (!resp.ok) {
+      _lastFetchError = 'HTTP ' + resp.status + (resp.status === 403 ? '（可能是 API 限流，稍后再试）' : '');
+      return null;
+    }
     const data = await resp.json();
-    if (!data.content) return null;
+    if (!data.content) { _lastFetchError = '云端文件为空或过大'; return null; }
     _lastSyncSha = data.sha;
-    return JSON.parse(decodeURIComponent(escape(atob(data.content.replace(/\s/g,'')))));
-  } catch(e) { return null; }
+    const decoded = JSON.parse(decodeURIComponent(escape(atob(data.content.replace(/\s/g,'')))));
+    _lastFetchError = '';
+    return decoded;
+  } catch(e) { _lastFetchError = '网络/解码失败: ' + (e && e.message ? e.message : e); return null; }
 }
 
 async function ghPush(content) {
@@ -2074,7 +2090,7 @@ async function ghPush(content) {
       method: 'PUT',
       headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
-      signal: AbortSignal.timeout(10000)
+      signal: timeoutSignal(10000)
     });
     if (!resp.ok) {
       if (resp.status === 409) {
@@ -2416,7 +2432,7 @@ async function clearAllData() {
 async function checkCloudUpdate(silent, force) {
   const remote = await ghFetch();
   if (!remote) {
-    if (!silent) setSyncStatus('error', '无法连接云端');
+    if (!silent) setSyncStatus('error', '无法连接云端' + (_lastFetchError ? '：' + _lastFetchError : ''));
     return;
   }
   if (!remote.syncedAt) {
