@@ -244,12 +244,12 @@
           "orderDate": "2026-08-14",
           "cost": "74.49",
           "extra": "",
-          "settlement": "",
+          "settlement": "99",
           "tracking": "",
-          "settleDate": "",
+          "settleDate": "2026-08-16",
           "id": "msvbmbfmk9jmoh",
           "createdAt": "2026-08-16T04:44:44.002Z",
-          "updatedAt": "2026-08-16T04:44:44.002Z"
+          "updatedAt": "2026-08-16T05:04:07.847Z"
         },
         {
           "project": "",
@@ -269,5 +269,5 @@
   },
   "height": null,
   "clearedAt": "2026-08-16T04:23:33.973Z",
-  "syncedAt": "2026-08-16T04:48:08.330Z"
+  "syncedAt": "2026-08-16T05:04:26.564Z"
 }
