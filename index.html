@@ -428,6 +428,68 @@ tr:hover td { background: #f8faff; }
 }
 .period-tab-add:hover { border-color: var(--primary); color: var(--primary); }
 
+.maoyang-period-profit {
+  font-size: 14px; font-weight: 600; color: var(--text);
+  display: flex; align-items: center; gap: 10px;
+  margin-top: 10px; padding: 8px 12px;
+  background: #f8fafc; border-radius: var(--radius-sm);
+}
+.maoyang-period-profit .profit-pos { color: var(--success); }
+.maoyang-period-profit .profit-neg { color: var(--danger); }
+
+.maoyang-list { display: flex; flex-direction: column; gap: 10px; }
+.my-group {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); overflow: hidden;
+}
+.my-group-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; cursor: pointer; background: #f8fafc;
+  user-select: none; transition: var(--transition);
+}
+.my-group-header:hover { background: #f1f5f9; }
+.my-group-header .toggle { font-size: 12px; color: var(--text-muted); width: 16px; text-align: center; }
+.my-group.expanded .my-group-header .toggle::after { content: '▼'; }
+.my-group:not(.expanded) .my-group-header .toggle::after { content: '▶'; }
+.my-group-header .project-name {
+  flex: 1; font-weight: 600; font-size: 14px; color: var(--text);
+}
+.my-group-header .project-count {
+  font-size: 11px; color: var(--text-muted); background: #fff;
+  padding: 2px 8px; border-radius: 10px; border: 1px solid var(--border);
+}
+.my-group-header .project-summary {
+  display: flex; gap: 12px; font-size: 12px; color: var(--text-light);
+}
+.my-group-header .project-summary span { white-space: nowrap; }
+.my-group-body {
+  display: none; padding: 8px 12px; flex-direction: column; gap: 8px;
+  border-top: 1px solid var(--border);
+}
+.my-group.expanded .my-group-body { display: flex; }
+.my-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 0; font-size: 13px; border-bottom: 1px solid var(--border);
+}
+.my-row:last-child { border-bottom: none; }
+.my-row .my-cell-item { flex: 1; min-width: 120px; }
+.my-row .my-cell-date { width: 86px; color: var(--text-muted); font-size: 12px; }
+.my-row .my-cell-num { width: 76px; text-align: right; font-variant-numeric: tabular-nums; }
+.my-row .my-cell-track { flex: 1; min-width: 80px; color: var(--text-muted); font-size: 12px; }
+.my-row .my-cell-actions { display: flex; gap: 4px; }
+.my-row .my-cell-actions .btn-sm { padding: 4px 8px; font-size: 12px; }
+.my-row-profit-pos { color: var(--success); font-weight: 600; }
+.my-row-profit-neg { color: var(--danger); font-weight: 600; }
+
+.my-project-wrap { position: relative; }
+.my-project-list { width: 100%; }
+
+@media (max-width: 768px) {
+  .my-row { flex-wrap: wrap; gap: 6px; }
+  .my-row .my-cell-num { width: 68px; }
+  .my-row .my-cell-actions { width: 100%; justify-content: flex-end; margin-top: 4px; }
+}
+
 /* ====== SYNC MODAL ====== */
 .sync-section { margin-bottom: 20px; }
 .sync-section h4 { font-size: 15px; margin-bottom: 10px; color: var(--text); }
@@ -683,24 +745,17 @@ tr:hover td { background: #f8faff; }
     <div class="period-tabs" id="maoyang-tabs">
       <div class="period-tab active" data-period="current" onclick="switchMaoyangPeriod('current')">本月</div>
     </div>
+    <div class="maoyang-period-profit" id="maoyang-period-profit">
+      <span>本月利润</span>
+      <span id="maoyang-period-profit-value">--</span>
+    </div>
   </div>
   <div class="card">
     <div class="card-header">
-      <h3 id="maoyang-table-title">本月数据</h3>
+      <h3 id="maoyang-table-title">本月记录</h3>
       <button class="btn btn-primary btn-sm" onclick="addMaoyangRow()">+ 添加记录</button>
     </div>
-    <div class="table-wrapper">
-      <table>
-        <thead>
-          <tr>
-            <th>利润</th><th>姓名</th><th>物品</th><th>下单日期</th><th>本金</th><th>默认垫付</th>
-            <th>结账</th><th>运费</th><th>备注</th><th>打款</th>
-            <th>结账日期</th><th>操作</th>
-          </tr>
-        </thead>
-        <tbody id="maoyang-table-body"></tbody>
-      </table>
-    </div>
+    <div class="maoyang-list" id="maoyang-list"></div>
     <div id="maoyang-empty" class="empty-state" style="display:none">
       <div class="empty-state-icon">📋</div><p>暂无数据，点击"添加记录"开始</p>
     </div>
@@ -783,15 +838,19 @@ tr:hover td { background: #f8faff; }
 <div class="modal-overlay" id="maoyang-modal">
   <div class="modal">
     <h3 id="maoyang-modal-title">添加记录</h3>
-    <div class="form-group"><label>姓名</label><input type="text" id="my-name" placeholder="你的名字"></div>
+    <div class="form-group">
+      <label>项目</label>
+      <div class="my-project-wrap">
+        <input type="text" id="my-project" list="my-project-list" placeholder="输入项目分类，留空为默认">
+        <datalist id="my-project-list"></datalist>
+      </div>
+    </div>
     <div class="form-group"><label>物品</label><input type="text" id="my-item" placeholder="物品名称"></div>
     <div class="form-group"><label>下单日期</label><input type="date" id="my-order-date"></div>
-    <div class="form-group"><label>本金 (¥)</label><input type="number" id="my-cost" placeholder="0.00" step="0.01"></div>
-    <div class="form-group"><label>默认垫付</label><select id="my-advance"><option value="">无</option><option value="退">退</option><option value="垫">垫</option></select></div>
-    <div class="form-group"><label>结账 (¥)</label><input type="number" id="my-settlement" placeholder="0.00" step="0.01"></div>
-    <div class="form-group"><label>运费 (¥)</label><input type="number" id="my-shipping" placeholder="0.00" step="0.01"></div>
+    <div class="form-group"><label>成本 (¥)</label><input type="number" id="my-cost" placeholder="0.00" step="0.01"></div>
+    <div class="form-group"><label>额外支出 (¥)</label><input type="number" id="my-extra" placeholder="0.00" step="0.01"></div>
+    <div class="form-group"><label>回款 (¥)</label><input type="number" id="my-settlement" placeholder="0.00" step="0.01"></div>
     <div class="form-group"><label>备注</label><input type="text" id="my-tracking" placeholder="备注信息"></div>
-    <div class="form-group"><label>打款 (¥)</label><input type="number" id="my-payment" placeholder="0.00" step="0.01"></div>
     <div class="form-group"><label>结账日期</label><input type="date" id="my-settle-date"></div>
     <input type="hidden" id="my-edit-id">
     <div class="modal-actions">
@@ -826,6 +885,7 @@ function loadState() {
       state.todos = parsed.todos || [];
       state.weights = parsed.weights || [];
       state.maoyang = parsed.maoyang || { periods: {} };
+      migrateMaoyang();
     }
   } catch(e) {}
 }
@@ -1317,12 +1377,29 @@ function renderWeightAdvice(pk) {
 }
 
 // ============ MAOYANG ============
+function migrateMaoyang() {
+  const periods = state.maoyang && state.maoyang.periods ? state.maoyang.periods : {};
+  Object.values(periods).forEach(arr => {
+    (arr || []).forEach(r => {
+      // 旧字段兼容：姓名 -> 项目，运费/打款 -> 额外支出
+      if (!r.project && r.name) r.project = r.name;
+      if (!r.project) r.project = '默认';
+      if (r.extra === undefined || r.extra === '') {
+        const ship = parseFloat(r.shipping) || 0;
+        const pay = parseFloat(r.payment) || 0;
+        r.extra = ship + pay > 0 ? String(ship + pay) : '';
+      }
+      // 删除已废弃字段
+      delete r.name; delete r.advance; delete r.shipping; delete r.payment;
+    });
+  });
+}
 function getMaoyangPeriods() { return Object.keys(state.maoyang.periods).sort((a,b)=>b.localeCompare(a)); }
 function renderMaoyangPage() {
   const cur = getCurrentPeriodKey();
   if (!state.currentPeriod || !state.maoyang.periods[state.currentPeriod]) state.currentPeriod = cur;
   ensurePeriod(state.currentPeriod);
-  renderMaoyangTabs(); renderMaoyangTable(); renderMaoyangSummary();
+  renderMaoyangTabs(); renderMaoyangList(); renderMaoyangSummary();
 }
 function renderMaoyangTabs() {
   const c = document.getElementById('maoyang-tabs');
@@ -1330,74 +1407,138 @@ function renderMaoyangTabs() {
   if (!ps.includes(cur)) { ensurePeriod(cur); ps.unshift(cur); }
   c.innerHTML = ps.map(p=>`<div class="period-tab ${p===state.currentPeriod?'active':''}" onclick="switchMaoyangPeriod('${p}')">${p.replace('-','年')}月</div>`).join('')+'<div class="period-tab-add" onclick="addMaoyangPeriod()" title="添加月份">+</div>';
 }
-function switchMaoyangPeriod(pk) { state.currentPeriod=pk; ensurePeriod(pk); renderMaoyangTabs(); renderMaoyangTable(); renderMaoyangSummary(); }
+function switchMaoyangPeriod(pk) { state.currentPeriod=pk; ensurePeriod(pk); renderMaoyangTabs(); renderMaoyangList(); renderMaoyangSummary(); }
 function addMaoyangPeriod() {
   const inp = prompt('输入月份 (格式: 2026-08):', getCurrentPeriodKey());
   if (!inp) return;
   if (!/^\d{4}-\d{2}$/.test(inp)) { showToast('格式错误'); return; }
   state.currentPeriod = inp; ensurePeriod(inp); saveState();
-  renderMaoyangTabs(); renderMaoyangTable(); renderMaoyangSummary();
+  renderMaoyangTabs(); renderMaoyangList(); renderMaoyangSummary();
+}
+function maoyangRowProfit(r) {
+  return (parseFloat(r.settlement)||0) - (parseFloat(r.cost)||0) - (parseFloat(r.extra)||0);
 }
 function renderMaoyangSummary() {
   const data = state.maoyang.periods[state.currentPeriod]||[], c = document.getElementById('maoyang-summary');
-  const g = data.reduce((s,r)=>s+(parseFloat(r.shipping)||0),0);
-  const d = data.reduce((s,r)=>s+(parseFloat(r.cost)||0),0);
-  const i = data.reduce((s,r)=>s+(parseFloat(r.payment)||0),0);
-  const f = data.reduce((s,r)=>s+(parseFloat(r.settlement)||0),0);
-  const exp = g+d+i, bal = f-exp;
-  const profit = data.reduce((s,r)=>s+((parseFloat(r.settlement)||0)-(parseFloat(r.cost)||0)-(parseFloat(r.shipping)||0)-(parseFloat(r.payment)||0)),0);
+  const cost = data.reduce((s,r)=>s+(parseFloat(r.cost)||0),0);
+  const extra = data.reduce((s,r)=>s+(parseFloat(r.extra)||0),0);
+  const settlement = data.reduce((s,r)=>s+(parseFloat(r.settlement)||0),0);
+  const expense = cost + extra;
+  const profit = settlement - expense;
   c.innerHTML = `
-    <div class="stat-card"><div class="stat-value">${formatMoney(g)}</div><div class="stat-label">总运费</div></div>
-    <div class="stat-card"><div class="stat-value">${formatMoney(d)}</div><div class="stat-label">总本金</div></div>
-    <div class="stat-card"><div class="stat-value">${formatMoney(i)}</div><div class="stat-label">总打款</div></div>
-    <div class="stat-card warning"><div class="stat-value">${formatMoney(exp)}</div><div class="stat-label">总支出</div></div>
-    <div class="stat-card success"><div class="stat-value">${formatMoney(f)}</div><div class="stat-label">回款</div></div>
-    <div class="stat-card ${bal>=0?'success':'danger'}"><div class="stat-value">${formatMoney(bal)}</div><div class="stat-label">余额</div></div>
-    <div class="stat-card ${profit>=0?'success':'danger'}"><div class="stat-value">${formatMoney(profit)}</div><div class="stat-label">核查 (利润)</div></div>
+    <div class="stat-card ${profit>=0?'success':'danger'}"><div class="stat-value">${formatMoney(profit)}</div><div class="stat-label">利润</div></div>
+    <div class="stat-card warning"><div class="stat-value">${formatMoney(expense)}</div><div class="stat-label">总支出</div></div>
+    <div class="stat-card success"><div class="stat-value">${formatMoney(settlement)}</div><div class="stat-label">回款</div></div>
+    <div class="stat-card"><div class="stat-value">${formatMoney(cost)}</div><div class="stat-label">成本</div></div>
+    <div class="stat-card"><div class="stat-value">${formatMoney(extra)}</div><div class="stat-label">额外支出</div></div>
   `;
+  renderMaoyangPeriodProfit();
 }
-function renderMaoyangTable() {
-  const tbody = document.getElementById('maoyang-table-body'), empty = document.getElementById('maoyang-empty');
+function renderMaoyangPeriodProfit() {
+  const data = state.maoyang.periods[state.currentPeriod]||[];
+  const profit = data.reduce((s,r)=>s+maoyangRowProfit(r),0);
+  const el = document.getElementById('maoyang-period-profit-value');
+  if (el) {
+    el.textContent = formatMoney(profit);
+    el.className = profit >= 0 ? 'profit-pos' : 'profit-neg';
+  }
+}
+function renderMaoyangList() {
+  const container = document.getElementById('maoyang-list'), empty = document.getElementById('maoyang-empty');
   const title = document.getElementById('maoyang-table-title');
   const data = state.maoyang.periods[state.currentPeriod]||[];
-  title.textContent = `${state.currentPeriod.replace('-','年')}月 数据`;
-  if (data.length===0) { tbody.innerHTML=''; empty.style.display='block'; return; }
+  title.textContent = `${state.currentPeriod.replace('-','年')}月 记录`;
+  if (data.length===0) { container.innerHTML=''; empty.style.display='block'; return; }
   empty.style.display='none';
-  tbody.innerHTML = data.slice().reverse().map((r, revI) => {
-    const i = data.length - 1 - revI;
-    const profit = (parseFloat(r.settlement)||0)-(parseFloat(r.cost)||0)-(parseFloat(r.shipping)||0)-(parseFloat(r.payment)||0);
-    return `<tr>
-      <td style="color:${profit>=0?'var(--success)':'var(--danger)'};font-weight:600">${formatMoney(profit)}</td>
-      <td>${escapeHtml(r.name||'-')}</td><td>${escapeHtml(r.item||'-')}</td><td>${formatDate(r.orderDate)}</td>
-      <td>${formatMoney(r.cost)}</td><td>${r.advance||'-'}</td><td>${formatMoney(r.settlement)}</td>
-      <td>${formatMoney(r.shipping)}</td><td>${escapeHtml(r.tracking||'-')}</td><td>${formatMoney(r.payment)}</td>
-      <td>${formatDate(r.settleDate)}</td>
-      <td>
-        <button class="btn btn-outline btn-sm" onclick="editMaoyangRow(${i})">编辑</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteMaoyangRow(${i})">删除</button>
-      </td>
-    </tr>`;
+  const groups = new Map();
+  data.forEach((r,i)=>{
+    const p = r.project || '默认';
+    if (!groups.has(p)) groups.set(p,{rows:[],cost:0,extra:0,settlement:0,profit:0});
+    const g = groups.get(p);
+    g.rows.push({r,i});
+    const cost = parseFloat(r.cost)||0, extra = parseFloat(r.extra)||0, settlement = parseFloat(r.settlement)||0;
+    g.cost += cost; g.extra += extra; g.settlement += settlement;
+    g.profit += settlement - cost - extra;
+  });
+  if (!window._myExpanded) window._myExpanded = new Set();
+  container.innerHTML = Array.from(groups.entries()).map(([project,g]) => {
+    const key = state.currentPeriod+'||'+project;
+    const expanded = window._myExpanded.has(key);
+    const profitClass = g.profit>=0?'profit-pos':'profit-neg';
+    const rowsHtml = g.rows.slice().reverse().map(({r,i}) => {
+      const profit = maoyangRowProfit(r);
+      const profitCls = profit>=0?'my-row-profit-pos':'my-row-profit-neg';
+      return `<div class="my-row">
+        <div class="my-cell-item"><b>${escapeHtml(r.item||'-')}</b></div>
+        <div class="my-cell-date">${formatDate(r.orderDate)}</div>
+        <div class="my-cell-num">${formatMoney(r.cost)}</div>
+        <div class="my-cell-num">${formatMoney(r.extra)}</div>
+        <div class="my-cell-num">${formatMoney(r.settlement)}</div>
+        <div class="my-cell-num ${profitCls}">${formatMoney(profit)}</div>
+        <div class="my-cell-track">${escapeHtml(r.tracking||'')}</div>
+        <div class="my-cell-actions">
+          <button class="btn btn-outline btn-sm" onclick="editMaoyangRow(${i})">编辑</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteMaoyangRow(${i})">删除</button>
+        </div>
+      </div>`;
+    }).join('');
+    return `<div class="my-group ${expanded?'expanded':''}" data-project="${escapeHtml(project)}">
+      <div class="my-group-header" onclick="toggleMaoyangGroup(this)">
+        <span class="toggle"></span>
+        <span class="project-name">${escapeHtml(project)}</span>
+        <span class="project-count">${g.rows.length} 条</span>
+        <div class="project-summary">
+          <span>成本 ${formatMoney(g.cost)}</span>
+          <span>额外 ${formatMoney(g.extra)}</span>
+          <span>回款 ${formatMoney(g.settlement)}</span>
+          <span class="${profitClass}">利润 ${formatMoney(g.profit)}</span>
+        </div>
+      </div>
+      <div class="my-group-body">${rowsHtml}</div>
+    </div>`;
   }).join('');
+}
+function toggleMaoyangGroup(el) {
+  const group = el.closest('.my-group');
+  const project = group.dataset.project;
+  const key = state.currentPeriod+'||'+project;
+  const expanded = !group.classList.contains('expanded');
+  group.classList.toggle('expanded', expanded);
+  if (!window._myExpanded) window._myExpanded = new Set();
+  if (expanded) window._myExpanded.add(key); else window._myExpanded.delete(key);
 }
 function addMaoyangRow() { openMaoyangModal('添加记录',''); }
 function editMaoyangRow(i) { openMaoyangModal('编辑记录',i); }
+function getProjectOptions() {
+  const set = new Set();
+  Object.values(state.maoyang.periods || {}).forEach(arr => (arr||[]).forEach(r => { if (r.project) set.add(r.project); }));
+  return Array.from(set).sort();
+}
+function updateProjectDatalist() {
+  const dl = document.getElementById('my-project-list');
+  if (!dl) return;
+  const opts = getProjectOptions();
+  dl.innerHTML = opts.map(p => `<option value="${escapeHtml(p)}">`).join('');
+}
 function openMaoyangModal(title, editId) {
   document.getElementById('maoyang-modal-title').textContent = title;
   document.getElementById('my-edit-id').value = editId;
-  const fields = ['my-name','my-item','my-order-date','my-cost','my-advance','my-settlement','my-shipping','my-tracking','my-payment','my-settle-date'];
+  updateProjectDatalist();
+  const fields = ['my-project','my-item','my-order-date','my-cost','my-extra','my-settlement','my-tracking','my-settle-date'];
   fields.forEach(f => document.getElementById(f).value = '');
-  if (editId !== '') {
+  const today = new Date().toISOString().slice(0,10);
+  if (editId === '') {
+    document.getElementById('my-order-date').value = today;
+  } else {
     const r = state.maoyang.periods[state.currentPeriod][parseInt(editId)];
     if (r) {
-      document.getElementById('my-name').value = r.name||'';
+      document.getElementById('my-project').value = r.project||'';
       document.getElementById('my-item').value = r.item||'';
       document.getElementById('my-order-date').value = r.orderDate||'';
       document.getElementById('my-cost').value = r.cost||'';
-      document.getElementById('my-advance').value = r.advance||'';
+      document.getElementById('my-extra').value = r.extra||'';
       document.getElementById('my-settlement').value = r.settlement||'';
-      document.getElementById('my-shipping').value = r.shipping||'';
       document.getElementById('my-tracking').value = r.tracking||'';
-      document.getElementById('my-payment').value = r.payment||'';
       document.getElementById('my-settle-date').value = r.settleDate||'';
     }
   }
@@ -1406,16 +1547,15 @@ function openMaoyangModal(title, editId) {
 function closeMaoyangModal() { document.getElementById('maoyang-modal').classList.remove('show'); }
 function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
 function saveMaoyangRecord() {
+  const today = new Date().toISOString().slice(0,10);
   const record = {
-    name: document.getElementById('my-name').value.trim(),
+    project: document.getElementById('my-project').value.trim() || '默认',
     item: document.getElementById('my-item').value.trim(),
-    orderDate: document.getElementById('my-order-date').value,
+    orderDate: document.getElementById('my-order-date').value || today,
     cost: document.getElementById('my-cost').value,
-    advance: document.getElementById('my-advance').value,
+    extra: document.getElementById('my-extra').value,
     settlement: document.getElementById('my-settlement').value,
-    shipping: document.getElementById('my-shipping').value,
     tracking: document.getElementById('my-tracking').value.trim(),
-    payment: document.getElementById('my-payment').value,
     settleDate: document.getElementById('my-settle-date').value
   };
   if (!record.item) { showToast('请输入物品名称'); return; }
@@ -1435,13 +1575,13 @@ function saveMaoyangRecord() {
     period.push(record);
   }
   saveState(); closeMaoyangModal();
-  renderMaoyangTable(); renderMaoyangSummary();
+  renderMaoyangList(); renderMaoyangSummary();
   showToast(editId!==''?'已更新':'已添加');
 }
 function deleteMaoyangRow(i) {
   if (!confirm('确定删除？')) return;
   state.maoyang.periods[state.currentPeriod].splice(i,1);
-  saveState(); renderMaoyangTable(); renderMaoyangSummary(); showToast('已删除');
+  saveState(); renderMaoyangList(); renderMaoyangSummary(); showToast('已删除');
 }
 
 // ============ SYNC ============
@@ -1469,6 +1609,7 @@ function importData(input) {
       state.todos = data.todos || [];
       state.weights = data.weights || [];
       state.maoyang = data.maoyang || { periods:{} };
+      migrateMaoyang();
       saveState();
       switchPage(state.currentPage);
       showToast('数据已导入');
@@ -1500,6 +1641,7 @@ function applySyncCode() {
     state.todos = data.todos || [];
     state.weights = data.weights || [];
     state.maoyang = data.maoyang || { periods:{} };
+    migrateMaoyang();
     saveState();
     switchPage(state.currentPage);
     document.getElementById('sync-code-input').value = '';
@@ -1661,10 +1803,13 @@ function recTime(r) {
   const t = new Date(r && (r.updatedAt || r.createdAt));
   return isNaN(t) ? 0 : t.getTime();
 }
-// 羊毛记录唯一键：有 id 用 id，老数据无 id 则用内容（保证相同内容去重）
+// 羊毛记录唯一键：有 id 用 id，老数据无 id 则用标准化内容（项目/物品/日期/金额）去重
 function maoyangKey(rec) {
   if (rec && rec.id) return 'id:' + rec.id;
-  return 'json:' + JSON.stringify(rec);
+  const project = rec.project || rec.name || '默认';
+  const extra = rec.extra !== undefined ? rec.extra : (parseFloat(rec.shipping||0) + parseFloat(rec.payment||0));
+  const parts = [project, rec.item||'', rec.orderDate||'', String(rec.cost||''), String(extra), String(rec.settlement||'')];
+  return 'json:' + JSON.stringify(parts);
 }
 // 合并两批记录：按唯一键归并，同一记录取 updatedAt/createdAt 较新的版本（以最新数据为准）
 function mergeRecords(localArr, remoteArr, keyFn) {
@@ -1702,6 +1847,7 @@ function mergeRemote(remote) {
   }
   if (changed) {
     saveState(); // 仅保存本地，不再自动上传
+    migrateMaoyang();
     switchPage(state.currentPage);
   }
   return changed;
@@ -1750,7 +1896,7 @@ function describeWeight(r){
 }
 function describeMaoyang(r){
   const parts = [];
-  if (r.name) parts.push(r.name);
+  if (r.project && r.project !== '默认') parts.push(r.project);
   if (r.item) parts.push(r.item);
   let s = parts.join(' / ') || '羊毛记录';
   if (r.settlement) s += ' · 回款' + formatMoney(r.settlement);
