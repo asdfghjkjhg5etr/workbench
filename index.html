@@ -490,10 +490,8 @@ tr:hover td { background: #f8faff; }
 .my-summary-row { background: #f8fafc; cursor: pointer; transition: var(--transition); }
 .my-summary-row:hover { background: #f1f5f9; }
 .my-summary-row td { border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
-.my-summary-row .project-name { font-weight: 600; display: flex; align-items: center; gap: 6px; }
-.my-summary-row .project-name::before { content: '▶'; font-size: 10px; color: var(--text-muted); }
-.my-summary-row .project-summary { display: flex; gap: 12px; font-size: 12px; color: var(--text-light); }
-.my-summary-row .project-summary span { white-space: nowrap; }
+.my-summary-row .summary-chip { font-weight: 600; }
+.my-summary-row .summary-chip .project-count { color: var(--text-muted); font-weight: 500; }
 
 .my-project-wrap { position: relative; }
 .my-project-list { width: 100%; }
@@ -1548,20 +1546,40 @@ function renderMaoyangList() {
   if (data.length===0) { container.innerHTML=''; empty.style.display='block'; return; }
   empty.style.display='none';
   const recTime = r => r.updatedAt || r.createdAt || r.orderDate || '';
-  const indexed = data.map((r,i)=>({r,i,time:recTime(r)})).sort((a,b)=> (b.time||'').localeCompare(a.time||''));
   if (!window._myCollapsed) window._myCollapsed = new Set();
   const collapsed = window._myCollapsed;
-  // 预计算各项目汇总
-  const sums = new Map();
-  indexed.forEach(({r})=>{
-    const p = r.project;
-    if (!p) return;
-    if (!sums.has(p)) sums.set(p,{count:0,cost:0,extra:0,settlement:0,profit:0});
-    const s = sums.get(p);
+
+  // 按项目分组，计算汇总与最新时间（用于排序和展示）
+  const groups = new Map();
+  const noProject = [];
+  data.forEach((r,i)=>{
+    const t = recTime(r);
+    if (!r.project) { noProject.push({r,i,time:t}); return; }
+    if (!groups.has(r.project)) groups.set(r.project, { items:[], latestTime:'', latestOrderDate:'', latestSettleDate:'', cost:0, extra:0, settlement:0, profit:0 });
+    const g = groups.get(r.project);
+    g.items.push({r,i,time:t});
+    if (t && t > g.latestTime) g.latestTime = t;
+    const od = r.orderDate || '';
+    if (od && od > g.latestOrderDate) g.latestOrderDate = od;
+    const sd = r.settleDate || '';
+    if (sd && sd > g.latestSettleDate) g.latestSettleDate = sd;
     const cost = parseFloat(r.cost)||0, extra = parseFloat(r.extra)||0, settlement = parseFloat(r.settlement)||0;
-    s.count++; s.cost += cost; s.extra += extra; s.settlement += settlement;
-    s.profit += settlement - cost - extra;
+    g.cost += cost; g.extra += extra; g.settlement += settlement;
+    g.profit += settlement - cost - extra;
   });
+
+  // 构建行：折叠项目以汇总行参与排序，平铺项目保持单条
+  const rows = [];
+  noProject.forEach(item => rows.push({type:'normal', ...item}));
+  groups.forEach((g, project)=>{
+    if (collapsed.has(project)) {
+      rows.push({type:'summary', project, ...g});
+    } else {
+      g.items.forEach(item => rows.push({type:'normal', ...item}));
+    }
+  });
+  rows.sort((a,b)=> (b.time || b.latestTime || '').localeCompare(a.time || a.latestTime || ''));
+
   const tableHead = `<thead><tr><th>利润</th><th>项目</th><th>物品</th><th>下单日期</th><th>成本</th><th>额外支出</th><th>回款</th><th>备注</th><th>结账日期</th><th>操作</th></tr></thead>`;
   const renderNormalRow = ({r,i}) => {
     const profit = maoyangRowProfit(r);
@@ -1585,34 +1603,27 @@ function renderMaoyangList() {
       </td>
     </tr>`;
   };
-  const renderSummaryRow = (project) => {
-    const s = sums.get(project) || {count:0,cost:0,extra:0,settlement:0,profit:0};
-    const profitClass = s.profit>=0?'profit-pos':'profit-neg';
-    return `<tr class="my-summary-row" onclick="expandMaoyangProject('${escapeHtml(project).replace(/'/g,"\\'")}')">
-      <td class="${profitClass}">${formatMoney(s.profit)}</td>
-      <td colspan="9">
-        <div style="display:flex;align-items:center;gap:12px;width:100%">
-          <span class="project-name">${escapeHtml(project)} <span class="project-count">${s.count} 条</span></span>
-          <div class="project-summary">
-            <span>成本 ${formatMoney(s.cost)}</span>
-            <span>额外 ${formatMoney(s.extra)}</span>
-            <span>回款 ${formatMoney(s.settlement)}</span>
-            <span class="${profitClass}">利润 ${formatMoney(s.profit)}</span>
-          </div>
-        </div>
+  const renderSummaryRow = (g) => {
+    const profitClass = g.profit>=0?'profit-pos':'profit-neg';
+    return `<tr class="my-summary-row" onclick="expandMaoyangProject('${escapeHtml(g.project).replace(/'/g,"\\'")}')">
+      <td class="${profitClass}">${formatMoney(g.profit)}</td>
+      <td colspan="2">
+        <span class="my-project-chip summary-chip">
+          <span style="font-size:10px;color:var(--text-muted)">▶</span>
+          ${escapeHtml(g.project)}
+          <span class="project-count">${g.items.length} 条</span>
+        </span>
       </td>
+      <td>${formatDate(g.latestOrderDate)}</td>
+      <td>${formatMoney(g.cost)}</td>
+      <td>${formatMoney(g.extra)}</td>
+      <td>${formatMoney(g.settlement)}</td>
+      <td>-</td>
+      <td>${formatDate(g.latestSettleDate)}</td>
+      <td>-</td>
     </tr>`;
   };
-  const renderedCollapsed = new Set();
-  const rowsHtml = indexed.map(({r,i})=>{
-    const p = r.project;
-    if (p && collapsed.has(p)) {
-      if (renderedCollapsed.has(p)) return '';
-      renderedCollapsed.add(p);
-      return renderSummaryRow(p);
-    }
-    return renderNormalRow({r,i});
-  }).join('');
+  const rowsHtml = rows.map(row => row.type==='summary' ? renderSummaryRow(row) : renderNormalRow(row)).join('');
   container.innerHTML = `<div class="table-wrapper"><table class="maoyang-table">${tableHead}<tbody>${rowsHtml}</tbody></table></div>`;
 }
 function collapseMaoyangProject(evt, project) {
