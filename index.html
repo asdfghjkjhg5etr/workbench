@@ -2110,9 +2110,11 @@ async function ghPush(content) {
 }
 
 function getHashOf(obj) {
+  // 完整哈希（不截断）：早期 slice(0,50) 只覆盖 JSON 前 50 字符，todos/weights 为空时
+  // 云端羊毛数据无论怎么变化 hash 都一样，导致检测不到云端更新（读不到新数据）
   return btoa(unescape(encodeURIComponent(JSON.stringify({
     todos: obj.todos, weights: obj.weights, maoyang: obj.maoyang, height: obj.height
-  })))).slice(0, 50);
+  }))));
 }
 function getLocalHash() {
   return getHashOf(state);
@@ -2499,7 +2501,7 @@ async function checkCloudUpdate(silent, force) {
   }
   const rHash = getHashOf(remote);
   if (rHash === getLocalHash()) {
-    if (!silent) setSyncStatus('synced', '已同步');
+    if (!silent && !skipSynced) setSyncStatus('synced', '已同步'); // 拒绝过清空时保持黄灯，不被"已同步"覆盖
     return;
   }
   // 云端与本地不一致
