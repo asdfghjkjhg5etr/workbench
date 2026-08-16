@@ -1107,12 +1107,10 @@ async function fetchNews() {
   renderNews(window.allNews);
   window.newsLoaded = true;
 
-  // 后台并行：RSS科技资讯 + 每日要闻 + 各平台热搜
-  await Promise.allSettled([
-    fetchRssNews(),
-    fetchDailyNews(),
-    fetchHotLists()
-  ]);
+  // 后台并行：RSS科技资讯 + 每日要闻 + 各平台热搜（兼容老浏览器：不用 Promise.allSettled）
+  await Promise.all([
+    fetchRssNews(), fetchDailyNews(), fetchHotLists()
+  ].map(function(p){ return p.catch(function(){}); }));
   // 重新渲染当前分类（如果用户切到了别的分类也由 filterNews 触发）
   filterNews(window.currentNewsFilter);
 }
@@ -1134,13 +1132,13 @@ async function fetchRssNews() {
       const items = doc.querySelectorAll('item');
       items.forEach((item, i) => {
         if (i >= 10) return;
-        const desc = (item.querySelector('description')?.textContent || '').replace(/<[^>]*>/g,'').trim();
+        const desc = ((item.querySelector('description')||{}).textContent || '').replace(/<[^>]*>/g,'').trim();
         window.allNews.push({
-          title: (item.querySelector('title')?.textContent || '').trim(),
+          title: ((item.querySelector('title')||{}).textContent || '').trim(),
           desc: desc.substring(0, 600),
           content: desc,
-          link: (item.querySelector('link')?.textContent || '').trim(),
-          time: item.querySelector('pubDate')?.textContent || new Date().toISOString(),
+          link: ((item.querySelector('link')||{}).textContent || '').trim(),
+          time: (item.querySelector('pubDate')||{}).textContent || new Date().toISOString(),
           cat: src.cat, tag: src.tag, region: src.region
         });
       });
@@ -1157,10 +1155,12 @@ async function fetchDailyNews() {
 
 // 各平台热搜榜单
 async function fetchHotLists() {
-  await Promise.allSettled(HOT_PLATFORMS.map(async (p) => {
-    const data = await fetchJSON(`${API_60S}/${p.key}`, { cacheKey:`60s_${p.key}`, cacheTtl:15*60*1000, timeout:8000 });
-    if (data && data.code===200 && Array.isArray(data.data)) window.hotLists[p.key] = data.data;
-  }));
+  await Promise.all(
+    HOT_PLATFORMS.map(async (p) => {
+      const data = await fetchJSON(`${API_60S}/${p.key}`, { cacheKey:`60s_${p.key}`, cacheTtl:15*60*1000, timeout:8000 });
+      if (data && data.code===200 && Array.isArray(data.data)) window.hotLists[p.key] = data.data;
+    }).map(p => p.catch(function(){}))
+  );
 }
 
 function filterNews(cat) {
@@ -1446,7 +1446,7 @@ function renderWeightStats(pk) {
   const min = Math.min(...vals).toFixed(1), max = Math.max(...vals).toFixed(1);
   const latest = data[data.length-1];
   c.innerHTML = `
-    <div class="stat-card"><div class="stat-value">${latest?latest.value.toFixed(1):'-'} kg</div><div class="stat-label">最新 (${latest?.period==='after'?'睡后':'睡前'})</div></div>
+    <div class="stat-card"><div class="stat-value">${latest?latest.value.toFixed(1):'-'} kg</div><div class="stat-label">最新 (${latest && latest.period==='after'?'睡后':'睡前'})</div></div>
     <div class="stat-card success"><div class="stat-value">${avgA} kg</div><div class="stat-label">月均睡后 (${a.length}次)</div></div>
     <div class="stat-card success"><div class="stat-value">${avgB} kg</div><div class="stat-label">月均睡前 (${b.length}次)</div></div>
     <div class="stat-card warning"><div class="stat-value">${min} ~ ${max} kg</div><div class="stat-label">月度区间</div></div>
@@ -2552,7 +2552,7 @@ function init() {
   sb.addEventListener('touchend', e => {
     if (window.innerWidth > 768) return;
     sb.style.transition = '';
-    if ((e.changedTouches[0]?.clientX||0) - touchX < -60) closeSidebar();
+    if (((e.changedTouches[0]||{}).clientX||0) - touchX < -60) closeSidebar();
     else sb.style.transform = '';
   });
 }
