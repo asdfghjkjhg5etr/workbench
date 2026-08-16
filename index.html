@@ -905,17 +905,22 @@ tr:hover td { background: #f8faff; }
     <div class="form-group">
       <label>项目</label>
       <div class="my-project-wrap">
-        <input type="text" id="my-project" list="my-project-list" placeholder="输入项目分类，留空为默认">
+        <input type="text" id="my-project" list="my-project-list" placeholder="输入项目分类，留空为默认" oninput="updateItemSuggestions();updateCostSuggestions()">
         <datalist id="my-project-list"></datalist>
       </div>
     </div>
-    <div class="form-group"><label>物品</label><input type="text" id="my-item" placeholder="物品名称"></div>
+    <div class="form-group">
+      <label>物品</label>
+      <input type="text" id="my-item" list="my-item-list" placeholder="物品名称" oninput="updateCostSuggestions()">
+      <datalist id="my-item-list"></datalist>
+    </div>
     <div class="form-group"><label>下单日期</label><input type="date" id="my-order-date"></div>
-    <div class="form-group"><label>成本 (¥)</label><input type="number" id="my-cost" placeholder="0.00" step="0.01"></div>
+    <div class="form-group"><label>成本 (¥)</label><input type="number" id="my-cost" list="my-cost-list" placeholder="0.00" step="0.01"><datalist id="my-cost-list"></datalist></div>
     <div class="form-group"><label>额外支出 (¥)</label><input type="number" id="my-extra" placeholder="0.00" step="0.01"></div>
     <div class="form-group"><label>回款 (¥)</label><input type="number" id="my-settlement" placeholder="0.00" step="0.01"></div>
     <div class="form-group"><label>备注</label><input type="text" id="my-tracking" placeholder="备注信息"></div>
     <div class="form-group"><label>结账日期</label><input type="date" id="my-settle-date"></div>
+    <p style="font-size:12px;color:var(--text-muted);margin-top:-6px">下单日期与结账日期至少填写一个（下单日期为主要排序依据）</p>
     <input type="hidden" id="my-edit-id">
     <div class="modal-actions">
       <button class="btn btn-outline" onclick="closeMaoyangModal()">取消</button>
@@ -1726,8 +1731,9 @@ function renderMaoyangList() {
   title.textContent = `${state.currentPeriod.replace('-','年')}月 记录`;
   if (data.length===0) { container.innerHTML=''; empty.style.display='block'; return; }
   empty.style.display='none';
-  // 排序键统一用下单日期 orderDate（缺失时回退到 createdAt/updatedAt）
-  const orderTime = r => r.orderDate || (r.createdAt||'').slice(0,10) || (r.updatedAt||'').slice(0,10) || '';
+  // 排序键：下单日期为主（缺失回退结账日期/录入日期），结账日期为次要排序键
+  const orderTime = r => r.orderDate || r.settleDate || (r.createdAt||'').slice(0,10) || (r.updatedAt||'').slice(0,10) || '';
+  const settleTime = r => r.settleDate || '';
   if (!window._myCollapsed) window._myCollapsed = new Set();
   const collapsed = window._myCollapsed;
 
@@ -1736,15 +1742,15 @@ function renderMaoyangList() {
   const noProject = [];
   data.forEach((r,i)=>{
     const t = orderTime(r);
-    if (!r.project) { noProject.push({r,i,time:t}); return; }
+    const st = settleTime(r);
+    if (!r.project) { noProject.push({r,i,time:t,st}); return; }
     if (!groups.has(r.project)) groups.set(r.project, { items:[], latestTime:'', latestOrderDate:'', latestSettleDate:'', cost:0, extra:0, settlement:0, profit:0 });
     const g = groups.get(r.project);
-    g.items.push({r,i,time:t});
+    g.items.push({r,i,time:t,st});
     if (t && t > g.latestTime) g.latestTime = t;
     const od = r.orderDate || '';
     if (od && od > g.latestOrderDate) g.latestOrderDate = od;
-    const sd = r.settleDate || '';
-    if (sd && sd > g.latestSettleDate) g.latestSettleDate = sd;
+    if (st && st > g.latestSettleDate) g.latestSettleDate = st;
     const cost = parseFloat(r.cost)||0, extra = parseFloat(r.extra)||0, settlement = parseFloat(r.settlement)||0;
     g.cost += cost; g.extra += extra; g.settlement += settlement;
     g.profit += settlement - cost - extra;
@@ -1760,8 +1766,16 @@ function renderMaoyangList() {
       g.items.forEach(item => rows.push({type:'normal', ...item}));
     }
   });
-  // 降序：最新下单日期在最上（8-16 > 8-15 > 8-14）
-  rows.sort((a,b)=> (b.time || b.latestTime || '').localeCompare(a.time || a.latestTime || ''));
+  // 降序：下单日期为主（缺失用结账日期回退），相同时按结账日期降序
+  rows.sort((a,b)=>{
+    const ap = a.time || a.latestTime || '', bp = b.time || b.latestTime || '';
+    let c = bp.localeCompare(ap);
+    if (c === 0) {
+      const as = a.st || a.latestSettleDate || '', bs = b.st || b.latestSettleDate || '';
+      c = bs.localeCompare(as);
+    }
+    return c;
+  });
 
   const tableHead = `<thead><tr><th>利润</th><th>项目</th><th>物品</th><th>下单日期</th><th>成本</th><th>额外支出</th><th>回款</th><th>备注</th><th>结账日期</th><th>操作</th></tr></thead>`;
   const renderNormalRow = ({r,i}) => {
@@ -1833,15 +1847,50 @@ function updateProjectDatalist() {
   const opts = getProjectOptions();
   dl.innerHTML = opts.map(p => `<option value="${escapeHtml(p)}">`).join('');
 }
+// ===== 级联联想：项目 → 物品 → 成本 =====
+function allMaoyangRecords() {
+  const out = [];
+  Object.values(state.maoyang.periods || {}).forEach(arr => (arr||[]).forEach(r => out.push(r)));
+  return out;
+}
+// 项目匹配：输入为空匹配未填项目的记录，否则精确匹配
+function projectMatches(recProject, inputProject) {
+  const rp = (recProject || '').trim();
+  return inputProject ? rp === inputProject : !rp;
+}
+// 物品联想：当前项目下用过的物品
+function updateItemSuggestions() {
+  const dl = document.getElementById('my-item-list');
+  if (!dl) return;
+  const proj = document.getElementById('my-project').value.trim();
+  const set = new Set();
+  allMaoyangRecords().forEach(r => {
+    if (projectMatches(r.project, proj) && r.item) set.add(r.item);
+  });
+  dl.innerHTML = Array.from(set).sort().map(v => `<option value="${escapeHtml(v)}">`).join('');
+}
+// 成本联想：当前项目 + 当前物品下用过的成本
+function updateCostSuggestions() {
+  const dl = document.getElementById('my-cost-list');
+  if (!dl) return;
+  const proj = document.getElementById('my-project').value.trim();
+  const item = document.getElementById('my-item').value.trim();
+  const set = new Set();
+  if (item) {
+    allMaoyangRecords().forEach(r => {
+      if (projectMatches(r.project, proj) && r.item === item && r.cost !== '' && r.cost != null) set.add(String(r.cost));
+    });
+  }
+  dl.innerHTML = Array.from(set).sort((a,b)=>parseFloat(a)-parseFloat(b)).map(v => `<option value="${escapeHtml(v)}">`).join('');
+}
 function openMaoyangModal(title, editId) {
   document.getElementById('maoyang-modal-title').textContent = title;
   document.getElementById('my-edit-id').value = editId;
   updateProjectDatalist();
   const fields = ['my-project','my-item','my-order-date','my-cost','my-extra','my-settlement','my-tracking','my-settle-date'];
   fields.forEach(f => document.getElementById(f).value = '');
-  const today = new Date().toISOString().slice(0,10);
   if (editId === '') {
-    document.getElementById('my-order-date').value = today;
+    // 下单/结账日期均不预填：两者至少填一个，由用户决定
   } else {
     const r = state.maoyang.periods[state.currentPeriod][parseInt(editId)];
     if (r) {
@@ -1855,16 +1904,17 @@ function openMaoyangModal(title, editId) {
       document.getElementById('my-settle-date').value = r.settleDate||'';
     }
   }
+  updateItemSuggestions();
+  updateCostSuggestions();
   document.getElementById('maoyang-modal').classList.add('show');
 }
 function closeMaoyangModal() { document.getElementById('maoyang-modal').classList.remove('show'); }
 function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
 function saveMaoyangRecord() {
-  const today = new Date().toISOString().slice(0,10);
   const record = {
     project: document.getElementById('my-project').value.trim(),
     item: document.getElementById('my-item').value.trim(),
-    orderDate: document.getElementById('my-order-date').value || today,
+    orderDate: document.getElementById('my-order-date').value,
     cost: document.getElementById('my-cost').value,
     extra: document.getElementById('my-extra').value,
     settlement: document.getElementById('my-settlement').value,
@@ -1872,6 +1922,7 @@ function saveMaoyangRecord() {
     settleDate: document.getElementById('my-settle-date').value
   };
   if (!record.item) { showToast('请输入物品名称'); return; }
+  if (!record.orderDate && !record.settleDate) { showToast('下单日期和结账日期至少填写一个'); return; }
   const editId = document.getElementById('my-edit-id').value;
   const period = state.maoyang.periods[state.currentPeriod];
   const now = new Date().toISOString();
