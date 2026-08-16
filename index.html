@@ -2239,6 +2239,11 @@ function mergeRemote(remote) {
     });
     if (JSON.stringify(merged) !== JSON.stringify(state.maoyang)) { state.maoyang = merged; changed = true; }
   }
+  // 合并云端数据即接受云端基线：同步 clearedAt，避免已合并过数据的设备每次打开都重复弹"是否清空"
+  if (remote.clearedAt && (!state.clearedAt || remote.clearedAt > state.clearedAt)) {
+    state.clearedAt = remote.clearedAt;
+    saveState();
+  }
   if (changed) {
     saveState(); // 仅保存本地，不再自动上传
     migrateMaoyang();
@@ -2463,22 +2468,33 @@ async function checkCloudUpdate(silent, force) {
       // 已拒绝过该次清空：不重复弹窗，黄灯常亮，但仍继续检查清空后的新数据
       setSyncStatus('warning', '云端已清空，本机保留数据');
       skipSynced = true;
-    } else if (confirm('☁️ 云端数据已于 ' + fmtSyncTime(remote.clearedAt) + ' 执行过"清空全部数据"。\n\n是否同步清空本机数据？（仅清空本机，不影响云端数据）')) {
-      applyLocalClear(remote.clearedAt);
-      _lastLocalHash = getLocalHash();
-      _declinedCloudHash = null;
-      _declinedClearedAt = null;
-      try { localStorage.removeItem('wb_declined_cleared'); } catch(e) {}
-      setSyncStatus('synced', '已同步清空');
-      showToast('✅ 本机数据已同步清空');
-      // 清空后继续走 diff：若清空后云端又有新数据，直接弹窗合并，避免读不到
     } else {
-      // 拒绝清空：本机保留数据，记住本次拒绝（持久化，刷新后不再重复弹），继续检查云端是否有新数据可合并
-      _declinedClearedAt = remote.clearedAt;
-      try { localStorage.setItem('wb_declined_cleared', remote.clearedAt); } catch(e) {}
-      setSyncStatus('warning', '云端已清空，本机保留数据');
-      skipSynced = true;
-      showToast('本机数据已保留');
+      // 本地已包含云端全部数据（之前合并过）：数据一致则静默同步基线，不再弹"是否清空"（手动强制检查时仍弹）
+      const d0 = diffCloud(state, remote);
+      const alreadyMerged = !d0.todos.added.length && !d0.todos.modified.length &&
+        !d0.weights.added.length && !d0.weights.modified.length &&
+        !d0.maoyang.added.length && !d0.maoyang.modified.length;
+      if (alreadyMerged && !force) {
+        state.clearedAt = remote.clearedAt;
+        saveState();
+        setSyncStatus('synced', '已同步');
+      } else if (confirm('☁️ 云端数据已于 ' + fmtSyncTime(remote.clearedAt) + ' 执行过"清空全部数据"。\n\n是否同步清空本机数据？（仅清空本机，不影响云端数据）')) {
+        applyLocalClear(remote.clearedAt);
+        _lastLocalHash = getLocalHash();
+        _declinedCloudHash = null;
+        _declinedClearedAt = null;
+        try { localStorage.removeItem('wb_declined_cleared'); } catch(e) {}
+        setSyncStatus('synced', '已同步清空');
+        showToast('✅ 本机数据已同步清空');
+        // 清空后继续走 diff：若清空后云端又有新数据，直接弹窗合并，避免读不到
+      } else {
+        // 拒绝清空：本机保留数据，记住本次拒绝（持久化，刷新后不再重复弹），继续检查云端是否有新数据可合并
+        _declinedClearedAt = remote.clearedAt;
+        try { localStorage.setItem('wb_declined_cleared', remote.clearedAt); } catch(e) {}
+        setSyncStatus('warning', '云端已清空，本机保留数据');
+        skipSynced = true;
+        showToast('本机数据已保留');
+      }
     }
   }
   const rHash = getHashOf(remote);
