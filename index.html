@@ -1719,15 +1719,16 @@ function renderMaoyangList() {
   title.textContent = `${state.currentPeriod.replace('-','年')}月 记录`;
   if (data.length===0) { container.innerHTML=''; empty.style.display='block'; return; }
   empty.style.display='none';
-  const recTime = r => r.updatedAt || r.createdAt || r.orderDate || '';
+  // 排序键统一用下单日期 orderDate（缺失时回退到 createdAt/updatedAt）
+  const orderTime = r => r.orderDate || (r.createdAt||'').slice(0,10) || (r.updatedAt||'').slice(0,10) || '';
   if (!window._myCollapsed) window._myCollapsed = new Set();
   const collapsed = window._myCollapsed;
 
-  // 按项目分组，计算汇总与最新时间（用于排序和展示）
+  // 按项目分组，计算汇总与最新下单日期（用于排序和展示）
   const groups = new Map();
   const noProject = [];
   data.forEach((r,i)=>{
-    const t = recTime(r);
+    const t = orderTime(r);
     if (!r.project) { noProject.push({r,i,time:t}); return; }
     if (!groups.has(r.project)) groups.set(r.project, { items:[], latestTime:'', latestOrderDate:'', latestSettleDate:'', cost:0, extra:0, settlement:0, profit:0 });
     const g = groups.get(r.project);
@@ -1752,7 +1753,8 @@ function renderMaoyangList() {
       g.items.forEach(item => rows.push({type:'normal', ...item}));
     }
   });
-  rows.sort((a,b)=> (b.time || b.latestTime || '').localeCompare(a.time || a.latestTime || ''));
+  // 升序：旧的下单日期在前，新的在后（8-14 < 8-15 < 8-16）
+  rows.sort((a,b)=> (a.time || a.latestTime || '').localeCompare(b.time || b.latestTime || ''));
 
   const tableHead = `<thead><tr><th>利润</th><th>项目</th><th>物品</th><th>下单日期</th><th>成本</th><th>额外支出</th><th>回款</th><th>备注</th><th>结账日期</th><th>操作</th></tr></thead>`;
   const renderNormalRow = ({r,i}) => {
