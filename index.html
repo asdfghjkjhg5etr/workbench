@@ -1350,11 +1350,24 @@ function renderWeightAdvice(pk) {
   const recordedDates = new Set(data.map(w => w.date));
   const consistency = recordedDates.size / elapsedDays;
 
-  // 早晚差异
-  const afterVals = data.filter(w => w.period === 'after').map(w => w.value);
-  const beforeVals = data.filter(w => w.period === 'before').map(w => w.value);
-  const avgAfter = afterVals.length ? afterVals.reduce((a,b)=>a+b,0) / afterVals.length : null;
-  const avgBefore = beforeVals.length ? beforeVals.reduce((a,b)=>a+b,0) / beforeVals.length : null;
+  // 配对分析：日间（早→晚）与睡眠（晚→早）
+  const byDate = {};
+  data.forEach(w => { (byDate[w.date] = byDate[w.date] || {})[w.period] = w.value; });
+  const dayPairs = [];   // 同一天：睡前 - 睡后 = 日间净增长
+  const nightPairs = []; // 跨夜：前晚睡前 - 次日睡后 = 睡眠消耗
+  const dKeys = Object.keys(byDate).sort();
+  dKeys.forEach((d, i) => {
+    const cur = byDate[d];
+    if (cur.after != null && cur.before != null) dayPairs.push(cur.before - cur.after);
+    if (i > 0) {
+      const prev = byDate[dKeys[i-1]];
+      const gap = (new Date(d) - new Date(dKeys[i-1])) / 86400000;
+      if (gap <= 1.5 && prev.before != null && cur.after != null) nightPairs.push(prev.before - cur.after);
+    }
+  });
+  const avgArr = arr => arr.length ? arr.reduce((a,b)=>a+b,0) / arr.length : null;
+  const avgDay = avgArr(dayPairs);    // 日间：正=净增长，负=净消耗
+  const avgNight = avgArr(nightPairs); // 睡眠：正常 0.3~1.2kg
 
   // 波动范围
   const vals = data.map(w => w.value);
@@ -1404,13 +1417,27 @@ function renderWeightAdvice(pk) {
     advices.push({ type:'info', icon:'📌', title:'试试每天记录', text:`本月仅记录 ${recordedDates.size} 天，坚持率 ${consistencyPct}%。数据越连续，建议越精准。定个小目标：连续记录7天看看效果！` });
   }
 
-  // 4. 早晚差异
-  if (avgAfter !== null && avgBefore !== null) {
-    const diff = avgBefore - avgAfter;
-    if (diff > 2.0) {
-      advices.push({ type:'warning', icon:'🌙', title:'早晚差异偏大', text:`平均早晚差 ${diff.toFixed(1)}kg，晚餐可能吃得偏多。建议晚餐七分饱、睡前2小时不进食，早上空腹称重更准确。` });
-    } else if (diff > 0) {
-      advices.push({ type:'success', icon:'✨', title:'早晚差异健康', text:`平均早晚差 ${diff.toFixed(1)}kg，在正常范围(0.5-2kg)内，饮食节奏很好！` });
+  // 4. 睡眠消耗（晚→早：前晚睡前 → 次日睡后）
+  if (avgNight !== null && nightPairs.length >= 2) {
+    const t = avgNight.toFixed(2);
+    if (avgNight < 0.3) {
+      advices.push({ type:'info', icon:'🌙', title:`睡眠消耗 ${t} kg/晚`, text:`夜间体重仅下降 ${t}kg，偏低于常见范围(0.3-1.2kg)。可能睡前饮水较多、睡眠较浅，或夜里起夜补水。不影响健康，保持规律作息即可。` });
+    } else if (avgNight <= 1.2) {
+      advices.push({ type:'success', icon:'🌙', title:`睡眠消耗 ${t} kg/晚`, text:`夜间平均消耗 ${t}kg（呼吸+水分蒸发+基础代谢），在健康范围(0.3-1.2kg)内。说明睡眠时身体代谢正常运转，睡得不错！` });
+    } else {
+      advices.push({ type:'warning', icon:'🌙', title:`睡眠消耗 ${t} kg/晚`, text:`夜间消耗达 ${t}kg，偏高于常见范围(0.3-1.2kg)。可能与出汗多、房间温度高或张口呼吸有关。保持卧室通风凉爽、睡前适量补水即可。` });
+    }
+  }
+
+  // 4b. 日间变化（早→晚：睡后 → 睡前）
+  if (avgDay !== null && dayPairs.length >= 2) {
+    const t = Math.abs(avgDay).toFixed(2);
+    if (avgDay < 0) {
+      advices.push({ type:'success', icon:'☀️', title:`日间净消耗 ${t} kg/天`, text:`白天体重平均下降 ${t}kg（睡后→睡前），日间消耗大于摄入。如果处于减重期，节奏不错；注意保证足够的水分和营养，避免过度节食。` });
+    } else if (avgDay <= 2.0) {
+      advices.push({ type:'success', icon:'☀️', title:`日间净增长 ${t} kg/天`, text:`白天体重平均上升 ${t}kg（睡后→睡前），属于正常饮食波动范围。日间摄入和消耗基本平衡，继续保持规律的饮食节奏！` });
+    } else {
+      advices.push({ type:'warning', icon:'☀️', title:`日间净增长 ${t} kg/天`, text:`白天体重平均上升 ${t}kg（睡后→睡前），摄入偏多。结合睡眠消耗看：只要长期体重稳定就没问题；若在减重期，可适当控制晚餐摄入。` });
     }
   }
 
