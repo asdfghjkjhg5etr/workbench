@@ -473,8 +473,28 @@ tr:hover td { background: #f8faff; }
 .my-row-profit-pos { color: var(--success); font-weight: 600; }
 .my-row-profit-neg { color: var(--danger); font-weight: 600; }
 
+/* 默认平铺、点击项目折叠为汇总行 */
+.maoyang-table { font-size: 13px; }
+.maoyang-table th, .maoyang-table td { padding: 9px 8px; }
+.maoyang-table td:first-child { font-weight: 600; }
+.my-summary-row { background: #f8fafc; cursor: pointer; transition: var(--transition); }
+.my-summary-row:hover { background: #f1f5f9; }
+.my-summary-row td { border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.my-summary-row .project-name { font-weight: 600; display: flex; align-items: center; gap: 6px; }
+.my-summary-row .project-name::before { content: '▶'; font-size: 10px; color: var(--text-muted); }
+.my-summary-row .project-summary { display: flex; gap: 12px; font-size: 12px; color: var(--text-light); }
+.my-summary-row .project-summary span { white-space: nowrap; }
+
 .my-project-wrap { position: relative; }
 .my-project-list { width: 100%; }
+.my-project-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: #f1f5f9; border: 1px solid var(--border);
+  border-radius: 12px; padding: 2px 10px; font-size: 12px;
+  cursor: pointer; color: var(--text); font-weight: 500;
+  transition: var(--transition);
+}
+.my-project-chip:hover { background: #e2e8f0; border-color: #cbd5e1; }
 
 @media (max-width: 768px) {
   .my-row { flex-wrap: wrap; gap: 6px; }
@@ -1444,32 +1464,30 @@ function renderMaoyangList() {
   if (data.length===0) { container.innerHTML=''; empty.style.display='block'; return; }
   empty.style.display='none';
   const recTime = r => r.updatedAt || r.createdAt || r.orderDate || '';
-  // 拆分：有项目的分组折叠，没写项目的单独平铺
-  const withProject = [], withoutProject = [];
-  data.forEach((r,i)=>{ (r.project ? withProject : withoutProject).push({r,i,time:recTime(r)}); });
-  withProject.sort((a,b)=> (b.time||'').localeCompare(a.time||''));
-  withoutProject.sort((a,b)=> (b.time||'').localeCompare(a.time||''));
-  // 有项目的分组
-  const groups = new Map();
-  withProject.forEach(({r,i,time})=>{
+  const indexed = data.map((r,i)=>({r,i,time:recTime(r)})).sort((a,b)=> (b.time||'').localeCompare(a.time||''));
+  if (!window._myCollapsed) window._myCollapsed = new Set();
+  const collapsed = window._myCollapsed;
+  // 预计算各项目汇总
+  const sums = new Map();
+  indexed.forEach(({r})=>{
     const p = r.project;
-    if (!groups.has(p)) groups.set(p,{rows:[],cost:0,extra:0,settlement:0,profit:0,maxTime:''});
-    const g = groups.get(p);
-    g.rows.push({r,i,time});
+    if (!p) return;
+    if (!sums.has(p)) sums.set(p,{count:0,cost:0,extra:0,settlement:0,profit:0});
+    const s = sums.get(p);
     const cost = parseFloat(r.cost)||0, extra = parseFloat(r.extra)||0, settlement = parseFloat(r.settlement)||0;
-    g.cost += cost; g.extra += extra; g.settlement += settlement;
-    g.profit += settlement - cost - extra;
-    if (time && time > g.maxTime) g.maxTime = time;
+    s.count++; s.cost += cost; s.extra += extra; s.settlement += settlement;
+    s.profit += settlement - cost - extra;
   });
-  const sortedGroups = Array.from(groups.entries()).sort((a,b)=> (b[1].maxTime||'').localeCompare(a[1].maxTime||''));
-  if (!window._myExpanded) window._myExpanded = new Set();
   const tableHead = `<thead><tr><th>利润</th><th>项目</th><th>物品</th><th>下单日期</th><th>成本</th><th>额外支出</th><th>回款</th><th>备注</th><th>结账日期</th><th>操作</th></tr></thead>`;
-  const renderRow = ({r,i}) => {
+  const renderNormalRow = ({r,i}) => {
     const profit = maoyangRowProfit(r);
     const profitCls = profit>=0?'my-row-profit-pos':'my-row-profit-neg';
+    const projectCell = r.project
+      ? `<span class="my-project-chip" onclick="collapseMaoyangProject(event,'${escapeHtml(r.project).replace(/'/g,"\\'")}')">${escapeHtml(r.project)}</span>`
+      : '';
     return `<tr>
-      <td class="${profitCls}" style="font-weight:600">${formatMoney(profit)}</td>
-      <td>${escapeHtml(r.project||'')}</td>
+      <td class="${profitCls}">${formatMoney(profit)}</td>
+      <td>${projectCell}</td>
       <td>${escapeHtml(r.item||'-')}</td>
       <td>${formatDate(r.orderDate)}</td>
       <td>${formatMoney(r.cost)}</td>
@@ -1483,47 +1501,46 @@ function renderMaoyangList() {
       </td>
     </tr>`;
   };
-  let html = '';
-  // 无项目记录：直接平铺，项目列留空
-  if (withoutProject.length) {
-    html += `<div class="my-group expanded">
-      <div class="my-group-body" style="display:block">
-        <div class="table-wrapper"><table>${tableHead}<tbody>${withoutProject.map(renderRow).join('')}</tbody></table></div>
-      </div>
-    </div>`;
-  }
-  // 有项目记录：分组折叠
-  html += sortedGroups.map(([project,g]) => {
-    const key = state.currentPeriod+'||'+project;
-    const expanded = window._myExpanded.has(key);
-    const profitClass = g.profit>=0?'profit-pos':'profit-neg';
-    return `<div class="my-group ${expanded?'expanded':''}" data-project="${escapeHtml(project)}">
-      <div class="my-group-header" onclick="toggleMaoyangGroup(this)">
-        <span class="toggle"></span>
-        <span class="project-name">${escapeHtml(project)}</span>
-        <span class="project-count">${g.rows.length} 条</span>
-        <div class="project-summary">
-          <span>成本 ${formatMoney(g.cost)}</span>
-          <span>额外 ${formatMoney(g.extra)}</span>
-          <span>回款 ${formatMoney(g.settlement)}</span>
-          <span class="${profitClass}">利润 ${formatMoney(g.profit)}</span>
+  const renderSummaryRow = (project) => {
+    const s = sums.get(project) || {count:0,cost:0,extra:0,settlement:0,profit:0};
+    const profitClass = s.profit>=0?'profit-pos':'profit-neg';
+    return `<tr class="my-summary-row" onclick="expandMaoyangProject('${escapeHtml(project).replace(/'/g,"\\'")}')">
+      <td class="${profitClass}">${formatMoney(s.profit)}</td>
+      <td colspan="9">
+        <div style="display:flex;align-items:center;gap:12px;width:100%">
+          <span class="project-name">${escapeHtml(project)} <span class="project-count">${s.count} 条</span></span>
+          <div class="project-summary">
+            <span>成本 ${formatMoney(s.cost)}</span>
+            <span>额外 ${formatMoney(s.extra)}</span>
+            <span>回款 ${formatMoney(s.settlement)}</span>
+            <span class="${profitClass}">利润 ${formatMoney(s.profit)}</span>
+          </div>
         </div>
-      </div>
-      <div class="my-group-body">
-        <div class="table-wrapper"><table>${tableHead}<tbody>${g.rows.map(renderRow).join('')}</tbody></table></div>
-      </div>
-    </div>`;
+      </td>
+    </tr>`;
+  };
+  const renderedCollapsed = new Set();
+  const rowsHtml = indexed.map(({r,i})=>{
+    const p = r.project;
+    if (p && collapsed.has(p)) {
+      if (renderedCollapsed.has(p)) return '';
+      renderedCollapsed.add(p);
+      return renderSummaryRow(p);
+    }
+    return renderNormalRow({r,i});
   }).join('');
-  container.innerHTML = html;
+  container.innerHTML = `<div class="table-wrapper"><table class="maoyang-table">${tableHead}<tbody>${rowsHtml}</tbody></table></div>`;
 }
-function toggleMaoyangGroup(el) {
-  const group = el.closest('.my-group');
-  const project = group.dataset.project;
-  const key = state.currentPeriod+'||'+project;
-  const expanded = !group.classList.contains('expanded');
-  group.classList.toggle('expanded', expanded);
-  if (!window._myExpanded) window._myExpanded = new Set();
-  if (expanded) window._myExpanded.add(key); else window._myExpanded.delete(key);
+function collapseMaoyangProject(evt, project) {
+  if (evt) evt.stopPropagation();
+  if (!window._myCollapsed) window._myCollapsed = new Set();
+  window._myCollapsed.add(project);
+  renderMaoyangList();
+}
+function expandMaoyangProject(project) {
+  if (!window._myCollapsed) window._myCollapsed = new Set();
+  window._myCollapsed.delete(project);
+  renderMaoyangList();
 }
 function addMaoyangRow() { openMaoyangModal('添加记录',''); }
 function editMaoyangRow(i) { openMaoyangModal('编辑记录',i); }
@@ -1593,12 +1610,6 @@ function saveMaoyangRecord() {
     period.push(record);
   }
   saveState(); closeMaoyangModal();
-  // 新增/编辑后自动展开对应项目分组，方便查看新数据（无项目时平铺区始终展开）
-  if (record.project) {
-    const projectKey = state.currentPeriod + '||' + record.project;
-    if (!window._myExpanded) window._myExpanded = new Set();
-    window._myExpanded.add(projectKey);
-  }
   renderMaoyangList(); renderMaoyangSummary();
   showToast(editId!==''?'已更新':'已添加');
 }
