@@ -2037,7 +2037,8 @@ let _lastSyncSha = null;
 let _lastLocalHash = '';
 let _cloudEnabled = false;
 let _declinedCloudHash = null; // 用户拒绝过的云端版本 hash，不再重复提醒
-let _declinedClearedAt = null; // 用户拒绝过的云端清空标记，不再重复弹窗（黄灯常亮）
+let _declinedClearedAt = null; // 用户拒绝过的云端清空标记，不再重复弹窗（黄灯常亮，持久化到 localStorage 防刷新后重复弹）
+try { _declinedClearedAt = localStorage.getItem('wb_declined_cleared') || null; } catch(e) {}
 
 function getGhToken() {
   try { return atob(localStorage.getItem('wb_gh_token') || ''); } catch(e) { return ''; }
@@ -2444,7 +2445,13 @@ async function checkCloudUpdate(silent, force) {
   let skipSynced = false; // 拒绝清空时，防止下方 diff 用"已同步"覆盖清空提醒
   // 云端发起的全量清空：提示各设备同步清空本地数据
   if (remote.clearedAt && (!state.clearedAt || remote.clearedAt > state.clearedAt)) {
-    if (silent) {
+    // 全新设备/本机无任何数据：无数据可清，静默接受云端清空基线，直接继续检查并合并云端数据（不再弹"是否清空"）
+    const localEmpty = !state.todos.length && !state.weights.length && !state.height &&
+      !Object.keys(state.maoyang.periods || {}).some(k => (state.maoyang.periods[k] || []).length);
+    if (localEmpty) {
+      state.clearedAt = remote.clearedAt;
+      saveState();
+    } else if (silent) {
       // 定时后台检查：已拒绝过该次清空则继续看有没有清空后的新数据，否则轻提醒
       if (_declinedClearedAt === remote.clearedAt) {
         // 继续走下方 diff
@@ -2456,17 +2463,19 @@ async function checkCloudUpdate(silent, force) {
       // 已拒绝过该次清空：不重复弹窗，黄灯常亮，但仍继续检查清空后的新数据
       setSyncStatus('warning', '云端已清空，本机保留数据');
       skipSynced = true;
-    } else if (confirm('☁️ 云端数据已于 ' + fmtSyncTime(remote.clearedAt) + ' 被全部清空。\n\n是否同步清空本机数据？')) {
+    } else if (confirm('☁️ 云端数据已于 ' + fmtSyncTime(remote.clearedAt) + ' 执行过"清空全部数据"。\n\n是否同步清空本机数据？（仅清空本机，不影响云端数据）')) {
       applyLocalClear(remote.clearedAt);
       _lastLocalHash = getLocalHash();
       _declinedCloudHash = null;
       _declinedClearedAt = null;
+      try { localStorage.removeItem('wb_declined_cleared'); } catch(e) {}
       setSyncStatus('synced', '已同步清空');
       showToast('✅ 本机数据已同步清空');
       // 清空后继续走 diff：若清空后云端又有新数据，直接弹窗合并，避免读不到
     } else {
-      // 拒绝清空：本机保留数据，记住本次拒绝，继续检查云端是否有新数据可合并
+      // 拒绝清空：本机保留数据，记住本次拒绝（持久化，刷新后不再重复弹），继续检查云端是否有新数据可合并
       _declinedClearedAt = remote.clearedAt;
+      try { localStorage.setItem('wb_declined_cleared', remote.clearedAt); } catch(e) {}
       setSyncStatus('warning', '云端已清空，本机保留数据');
       skipSynced = true;
       showToast('本机数据已保留');
