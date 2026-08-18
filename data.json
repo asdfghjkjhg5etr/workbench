@@ -341,11 +341,24 @@
           "id": "msyfbdiaozffkm",
           "createdAt": "2026-08-18T08:51:30.466Z",
           "updatedAt": "2026-08-18T08:51:30.466Z"
+        },
+        {
+          "project": "快手",
+          "item": "提现",
+          "orderDate": "",
+          "cost": "",
+          "extra": "",
+          "settlement": "0.5",
+          "tracking": "",
+          "settleDate": "2026-08-18",
+          "id": "msyjv4dpylav0z",
+          "createdAt": "2026-08-18T10:58:50.221Z",
+          "updatedAt": "2026-08-18T10:58:50.221Z"
         }
       ]
     }
   },
   "height": null,
   "clearedAt": "2026-08-16T04:23:33.973Z",
-  "syncedAt": "2026-08-18T08:51:37.625Z"
+  "syncedAt": "2026-08-18T10:58:55.003Z"
 }
