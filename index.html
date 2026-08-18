@@ -528,6 +528,7 @@ tr:hover td { background: #f8faff; }
 .my-summary-row td { border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
 .my-summary-row .summary-chip { font-weight: 600; }
 .my-summary-row .summary-chip .project-count { color: var(--text-muted); font-weight: 500; }
+.my-record-time { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
 
 .my-project-wrap { position: relative; }
 .my-project-list { width: 100%; }
@@ -998,6 +999,7 @@ function showToast(msg) {
   document.body.appendChild(t); setTimeout(() => t.remove(), 2500);
 }
 function formatDate(s) { if (!s) return '-'; const d = new Date(s); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function formatDateTime(s) { if (!s) return '-'; var d = new Date(s); if (isNaN(d.getTime())) return '-'; return `${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
 function formatMoney(v) { return '¥' + (parseFloat(v) || 0).toFixed(2); }
 function escapeHtml(s) { const d = document.createElement('div'); d.textContent = s||''; return d.innerHTML; }
 function timeAgo(d) {
@@ -1755,10 +1757,12 @@ function renderMaoyangList() {
     const t = orderTime(r);
     const st = settleTime(r);
     if (!r.project) { noProject.push({r,i,time:t,st}); return; }
-    if (!groups.has(r.project)) groups.set(r.project, { items:[], latestTime:'', latestOrderDate:'', latestSettleDate:'', cost:0, extra:0, settlement:0, profit:0 });
+    if (!groups.has(r.project)) groups.set(r.project, { items:[], latestTime:'', latestOrderDate:'', latestSettleDate:'', latestCreatedAt:'', cost:0, extra:0, settlement:0, profit:0 });
     const g = groups.get(r.project);
     g.items.push({r,i,time:t,st});
     if (t && t > g.latestTime) g.latestTime = t;
+    var ca = r.createdAt || '';
+    if (ca && ca > g.latestCreatedAt) g.latestCreatedAt = ca;
     const od = r.orderDate || '';
     if (od && od > g.latestOrderDate) g.latestOrderDate = od;
     if (st && st > g.latestSettleDate) g.latestSettleDate = st;
@@ -1788,7 +1792,7 @@ function renderMaoyangList() {
     return c;
   });
 
-  const tableHead = `<thead><tr><th>利润</th><th>项目</th><th>物品</th><th>下单日期</th><th>成本</th><th>额外支出</th><th>回款</th><th>备注</th><th>结账日期</th><th>操作</th></tr></thead>`;
+  const tableHead = `<thead><tr><th>利润</th><th>项目</th><th>物品</th><th>下单日期</th><th>成本</th><th>额外支出</th><th>回款</th><th>备注</th><th>结账日期</th><th>记录时间</th><th>操作</th></tr></thead>`;
   const renderNormalRow = ({r,i}) => {
     const profit = maoyangRowProfit(r);
     const profitCls = profit>=0?'my-row-profit-pos':'my-row-profit-neg';
@@ -1805,6 +1809,7 @@ function renderMaoyangList() {
       <td>${formatMoney(r.settlement)}</td>
       <td>${escapeHtml(r.tracking||'-')}</td>
       <td>${formatDate(r.settleDate)}</td>
+      <td class="my-record-time">${formatDateTime(r.createdAt)}</td>
       <td>
         <button class="btn btn-outline btn-sm" onclick="editMaoyangRow(${i})">编辑</button>
         <button class="btn btn-danger btn-sm" onclick="deleteMaoyangRow(${i})">删除</button>
@@ -1828,6 +1833,7 @@ function renderMaoyangList() {
       <td>${formatMoney(g.settlement)}</td>
       <td>-</td>
       <td>${formatDate(g.latestSettleDate)}</td>
+      <td class="my-record-time">${formatDateTime(g.latestCreatedAt)}</td>
       <td>-</td>
     </tr>`;
   };
