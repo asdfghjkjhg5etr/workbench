@@ -1756,10 +1756,11 @@ function renderMaoyangList() {
   data.forEach((r,i)=>{
     const t = orderTime(r);
     const st = settleTime(r);
-    if (!r.project) { noProject.push({r,i,time:t,st}); return; }
+    const rt = r.createdAt || r.updatedAt || '';
+    if (!r.project) { noProject.push({r,i,time:t,st,recTime:rt}); return; }
     if (!groups.has(r.project)) groups.set(r.project, { items:[], latestTime:'', latestOrderDate:'', latestSettleDate:'', latestCreatedAt:'', cost:0, extra:0, settlement:0, profit:0 });
     const g = groups.get(r.project);
-    g.items.push({r,i,time:t,st});
+    g.items.push({r,i,time:t,st,recTime:rt});
     if (t && t > g.latestTime) g.latestTime = t;
     var ca = r.createdAt || '';
     if (ca && ca > g.latestCreatedAt) g.latestCreatedAt = ca;
@@ -1781,13 +1782,17 @@ function renderMaoyangList() {
       g.items.forEach(item => rows.push({type:'normal', ...item}));
     }
   });
-  // 降序：下单日期为主（缺失用结账日期回退），相同时按结账日期降序
+  // 降序：①下单日期（缺失用结账日期回退）→ ②结账日期 → ③记录时间（精确到时分秒）
   rows.sort((a,b)=>{
     const ap = a.time || a.latestTime || '', bp = b.time || b.latestTime || '';
     let c = bp.localeCompare(ap);
     if (c === 0) {
       const as = a.st || a.latestSettleDate || '', bs = b.st || b.latestSettleDate || '';
       c = bs.localeCompare(as);
+    }
+    if (c === 0) {
+      const ar = a.recTime || a.latestCreatedAt || '', br = b.recTime || b.latestCreatedAt || '';
+      c = br.localeCompare(ar); // 记录时间新的在上
     }
     return c;
   });
