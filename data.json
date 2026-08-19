@@ -414,11 +414,24 @@
           "id": "mszugk9id7m04r",
           "createdAt": "2026-08-19T08:43:12.918Z",
           "updatedAt": "2026-08-19T08:43:12.918Z"
+        },
+        {
+          "project": "zfb",
+          "item": "酷奇蚂蚁10头",
+          "orderDate": "2026-08-19",
+          "cost": "36.5",
+          "extra": "",
+          "settlement": "",
+          "tracking": "",
+          "settleDate": "",
+          "id": "mt04faks2hx8u3",
+          "createdAt": "2026-08-19T13:22:09.866Z",
+          "updatedAt": "2026-08-19T13:22:09.866Z"
         }
       ]
     }
   },
   "height": null,
   "clearedAt": "2026-08-16T04:23:33.973Z",
-  "syncedAt": "2026-08-19T08:53:42.762Z"
+  "syncedAt": "2026-08-19T13:22:20.785Z"
 }
