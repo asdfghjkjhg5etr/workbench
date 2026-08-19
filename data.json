@@ -8,7 +8,15 @@
       "updatedAt": "2026-08-19T08:53:40.936Z"
     }
   ],
-  "weights": [],
+  "weights": [
+    {
+      "date": "2026-08-19",
+      "period": "before",
+      "value": 105.35,
+      "createdAt": "2026-08-19T15:06:29.663Z",
+      "updatedAt": "2026-08-19T15:06:29.663Z"
+    }
+  ],
   "maoyang": {
     "periods": {
       "2026-08": [
@@ -431,7 +439,7 @@
       ]
     }
   },
-  "height": null,
+  "height": 180,
   "clearedAt": "2026-08-16T04:23:33.973Z",
-  "syncedAt": "2026-08-19T13:22:20.785Z"
+  "syncedAt": "2026-08-19T15:07:01.255Z"
 }
