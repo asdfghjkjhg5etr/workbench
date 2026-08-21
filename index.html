@@ -680,7 +680,7 @@ tr:hover td { background: #f8faff; }
   </nav>
   <div class="sidebar-footer" style="flex-direction:column;align-items:flex-start;gap:4px">
     <div style="display:flex;justify-content:space-between;width:100%;align-items:center">
-      <span>v2.2</span>
+      <span>v2.3</span>
       <button class="sync-btn" onclick="openSyncPanel()">🔄 同步</button>
     </div>
     <div class="sync-status" id="sync-status-bar">
@@ -967,6 +967,7 @@ function loadState() {
       state.todos = parsed.todos || [];
       state.weights = parsed.weights || [];
       state.height = parsed.height || null;
+      state.heightUpdatedAt = parsed.heightUpdatedAt || null;
       state.maoyang = parsed.maoyang || { periods: {} };
       state.clearedAt = parsed.clearedAt || null;
       state.deletedIds = parsed.deletedIds || {};
@@ -990,6 +991,7 @@ function migrateWeights(arr) {
 function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify({
     todos: state.todos, weights: state.weights, maoyang: state.maoyang, height: state.height,
+    heightUpdatedAt: state.heightUpdatedAt || null,
     clearedAt: state.clearedAt || null,
     deletedIds: state.deletedIds || {},
     dataFixVersion: state.dataFixVersion || DATA_FIX_VERSION,
@@ -1015,6 +1017,7 @@ function tombstone(key) {
   if (!key) return;
   state.deletedIds = state.deletedIds || {};
   state.deletedIds[key] = new Date().toISOString();
+  scheduleTombstonePush(); // v2.3: 删除后静默把墓碑推到云端，其他设备即时感知，不再依赖下一次"确认上传"
 }
 // 记录已"死亡"：命中删除墓碑；或清空基线(clearedAt)存在时，早于基线/无时间戳的旧格式记录
 function recordDead(r, keyFn, delMap, clearedAt) {
@@ -1094,6 +1097,14 @@ function formatDate(s) { if (!s) return '-'; const d = new Date(s); return `${d.
 function formatDateTime(s) { if (!s) return '-'; var d = new Date(s); if (isNaN(d.getTime())) return '-'; return `${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
 function formatMoney(v) { return '¥' + (parseFloat(v) || 0).toFixed(2); }
 function escapeHtml(s) { const d = document.createElement('div'); d.textContent = s||''; return d.innerHTML; }
+// 属性上下文转义：在 escapeHtml 基础上补双引号（v2.3 修复：项目名含 " 会破坏 onclick/value 属性）
+function escAttr(s) { return escapeHtml(s).replace(/"/g, '&quot;'); }
+// 外链安全化：仅放行 http(s)，其余（含 javascript: 等注入向量）一律回退为 #（v2.3 修复）
+function safeUrl(u) {
+  const s = String(u || '').trim();
+  if (!/^https?:\/\//i.test(s)) return '#';
+  return s.replace(/"/g, '&quot;');
+}
 function timeAgo(d) {
   const diff = new Date() - new Date(d); if (isNaN(diff)) return '';
   const m = Math.floor(diff/60000); if (m<60) return m+'分钟前';
@@ -1311,7 +1322,7 @@ function renderHotlistBoard() {
           const val = it.hot_value || it.score || it.hot || '';
           const rk = idx + 1;
           const rkCls = rk===1?'top1':rk===2?'top2':rk===3?'top3':'normal';
-          return `<a class="hotlist-item" href="${link}" target="_blank" rel="noopener">
+          return `<a class="hotlist-item" href="${safeUrl(link)}" target="_blank" rel="noopener">
             <span class="hotlist-rank ${rkCls}">${rk}</span>
             <span class="hotlist-title">${title}</span>
             ${val ? `<span class="hotlist-value">${formatHotValue(val)}</span>` : ''}
@@ -1369,7 +1380,7 @@ function openNewsDetail(idx) {
     </div>
     <div class="news-detail-body">
       ${body}
-      ${item.link ? `<p style="margin-top:16px"><a href="${item.link}" target="_blank" rel="noopener" style="color:var(--primary)">📎 查看原文 →</a></p>` : ''}
+      ${item.link ? `<p style="margin-top:16px"><a href="${safeUrl(item.link)}" target="_blank" rel="noopener" style="color:var(--primary)">📎 查看原文 →</a></p>` : ''}
     </div>
   `;
   overlay.style.display = 'flex';
@@ -1439,7 +1450,7 @@ function autoDetectPeriod() {
 function saveHeight() {
   const h = parseFloat(document.getElementById('weight-height').value);
   if (h && h >= 50 && h <= 250) {
-    state.height = h;
+    if (state.height !== h) { state.height = h; state.heightUpdatedAt = new Date().toISOString(); } // v2.3: 记录身高修改时间，合并时谁后改听谁的
     saveState();
     renderBMI();
   }
@@ -1539,7 +1550,7 @@ function renderWeightStats(pk) {
   const avgA = a.length?(a.reduce((s,w)=>s+w.value,0)/a.length).toFixed(1):'-';
   const avgB = b.length?(b.reduce((s,w)=>s+w.value,0)/b.length).toFixed(1):'-';
   const min = Math.min(...vals).toFixed(1), max = Math.max(...vals).toFixed(1);
-  const latest = data[data.length-1];
+  const latest = [...data].sort((a,b)=>new Date(b.date+(b.period==='after'?'T08:00':'T22:00'))-new Date(a.date+(a.period==='after'?'T08:00':'T22:00')))[0]; // v2.3: 按时间排序取最新，不依赖数组顺序
   c.innerHTML = `
     <div class="stat-card"><div class="stat-value">${latest?latest.value.toFixed(1):'-'} kg</div><div class="stat-label">最新 (${latest && latest.period==='after'?'睡后':'睡前'})</div></div>
     <div class="stat-card success"><div class="stat-value">${avgA} kg</div><div class="stat-label">月均睡后 (${a.length}次)</div></div>
@@ -1895,7 +1906,7 @@ function renderMaoyangList() {
     const profit = maoyangRowProfit(r);
     const profitCls = profit>=0?'my-row-profit-pos':'my-row-profit-neg';
     const projectCell = r.project
-      ? `<span class="my-project-chip" onclick="collapseMaoyangProject(event,'${escapeHtml(r.project).replace(/'/g,"\\'")}')">${escapeHtml(r.project)}</span>`
+      ? `<span class="my-project-chip" onclick="collapseMaoyangProject(event,'${escAttr(r.project).replace(/'/g,"\\'")}')">${escapeHtml(r.project)}</span>`
       : '';
     return `<tr>
       <td class="${profitCls}">${formatMoney(profit)}</td>
@@ -1916,7 +1927,7 @@ function renderMaoyangList() {
   };
   const renderSummaryRow = (g) => {
     const profitClass = g.profit>=0?'profit-pos':'profit-neg';
-    return `<tr class="my-summary-row" onclick="expandMaoyangProject('${escapeHtml(g.project).replace(/'/g,"\\'")}')">
+    return `<tr class="my-summary-row" onclick="expandMaoyangProject('${escAttr(g.project).replace(/'/g,"\\'")}')">
       <td class="${profitClass}">${formatMoney(g.profit)}</td>
       <td colspan="2">
         <span class="my-project-chip summary-chip">
@@ -1960,7 +1971,7 @@ function updateProjectDatalist() {
   const dl = document.getElementById('my-project-list');
   if (!dl) return;
   const opts = getProjectOptions();
-  dl.innerHTML = opts.map(p => `<option value="${escapeHtml(p)}">`).join('');
+  dl.innerHTML = opts.map(p => `<option value="${escAttr(p)}">`).join('');
 }
 // ===== 级联联想：项目 → 物品 → 成本 =====
 function allMaoyangRecords() {
@@ -1982,7 +1993,7 @@ function updateItemSuggestions() {
   allMaoyangRecords().forEach(r => {
     if (projectMatches(r.project, proj) && r.item) set.add(r.item);
   });
-  dl.innerHTML = Array.from(set).sort().map(v => `<option value="${escapeHtml(v)}">`).join('');
+  dl.innerHTML = Array.from(set).sort().map(v => `<option value="${escAttr(v)}">`).join('');
 }
 // 成本联想：当前项目 + 当前物品下用过的成本
 function updateCostSuggestions() {
@@ -1996,7 +2007,7 @@ function updateCostSuggestions() {
       if (projectMatches(r.project, proj) && r.item === item && r.cost !== '' && r.cost != null) set.add(String(r.cost));
     });
   }
-  dl.innerHTML = Array.from(set).sort((a,b)=>parseFloat(a)-parseFloat(b)).map(v => `<option value="${escapeHtml(v)}">`).join('');
+  dl.innerHTML = Array.from(set).sort((a,b)=>parseFloat(a)-parseFloat(b)).map(v => `<option value="${escAttr(v)}">`).join('');
 }
 function openMaoyangModal(title, editId) {
   document.getElementById('maoyang-modal-title').textContent = title;
@@ -2089,6 +2100,7 @@ function importData(input) {
       const data = JSON.parse(e.target.result);
       state.todos = data.todos || [];
       state.weights = data.weights || [];
+      if (state.height !== (data.height || null)) state.heightUpdatedAt = new Date().toISOString();
       state.height = data.height || null;
       state.maoyang = data.maoyang || { periods:{} };
       migrateWeights(); migrateMaoyang();
@@ -2122,6 +2134,7 @@ function applySyncCode() {
     const data = JSON.parse(json);
     state.todos = data.todos || [];
     state.weights = data.weights || [];
+    if (state.height !== (data.height || null)) state.heightUpdatedAt = new Date().toISOString();
     state.height = data.height || null;
     state.maoyang = data.maoyang || { periods:{} };
     migrateWeights(); migrateMaoyang();
@@ -2223,6 +2236,46 @@ function getHashOf(obj) {
     deletedIds: sortedDelIds(obj.deletedIds || {})
   }))));
 }
+
+// ===== v2.3: 删除墓碑静默上云（跨设备删除即时传播）=====
+// 背景：此前删除只记录在本地墓碑，云端 data.json 仍留有该记录——若一直不点"确认上传"，
+// 其他设备合并时会短暂"复活"它。现在删除后自动把墓碑（deletedIds/clearedAt 并集）合并进云端，
+// 只动删除基线，不改写云端各板块的业务数据。
+let _pushTombTimer = null;
+let _pushTombBusy = false;
+function scheduleTombstonePush() {
+  if (!getGhToken()) return; // 未配置 Token 的设备只保留本地墓碑（合并/上传时仍会带上去）
+  if (_pushTombTimer) clearTimeout(_pushTombTimer);
+  _pushTombTimer = setTimeout(pushTombstonesToCloud, 4000); // 防抖：连续删除只推一次
+}
+async function pushTombstonesToCloud() {
+  if (_pushTombBusy) { scheduleTombstonePush(); return; }
+  _pushTombBusy = true;
+  try {
+    const remote = await ghFetch();
+    if (!remote) return; // 暂时拉不下来就算了：下次合并/上传时墓碑仍会传播
+    const delMap = mergeDeletedIds(remote.deletedIds, state.deletedIds);
+    const clearedAt = (state.clearedAt && (!remote.clearedAt || state.clearedAt > remote.clearedAt))
+      ? state.clearedAt : (remote.clearedAt || state.clearedAt || null);
+    const before = JSON.stringify(sortedDelIds(remote.deletedIds || {})) + '|' + (remote.clearedAt || '');
+    const after = JSON.stringify(sortedDelIds(delMap)) + '|' + (clearedAt || '');
+    if (after === before) return; // 云端墓碑已是最新，无需写入
+    const payload = {
+      todos: (remote.todos||[]).filter(r=>!recordDead(r, t=>t.createdAt, delMap, clearedAt)),
+      weights: (remote.weights||[]).filter(r=>!recordDead(r, w=>w.createdAt, delMap, clearedAt)),
+      maoyang: sanitizeMaoyangForCloud(remote.maoyang||{periods:{}}, delMap, clearedAt),
+      height: remote.height || null,
+      heightUpdatedAt: remote.heightUpdatedAt || null,
+      clearedAt: clearedAt,
+      deletedIds: delMap,
+      dataFixVersion: DATA_FIX_VERSION,
+      syncedAt: new Date().toISOString()
+    };
+    const r = await ghPush(payload);
+    if (r === 'conflict') scheduleTombstonePush(); // 云端刚被其他设备改动：稍后自动重试
+  } catch(e) { /* 静默失败：不影响用户操作，墓碑仍在本地 */ }
+  finally { _pushTombBusy = false; }
+}
 function getLocalHash() {
   return getHashOf(state);
 }
@@ -2256,11 +2309,16 @@ async function confirmUpload(section) {
   const delMap = mergeDeletedIds((cloud && cloud.deletedIds) || {}, state.deletedIds || {});
   const cClear = (cloud && cloud.clearedAt) || null;
   const clearedBase = (cClear && state.clearedAt && state.clearedAt > cClear) ? state.clearedAt : (cClear || state.clearedAt || null);
+  // 身高取"修改时间较新"的一方（v2.3：本机改过身高就带本机的时间戳上云）
+  const hLocal = { height: state.height || null, at: state.heightUpdatedAt || '' };
+  const hCloud = { height: (cloud && cloud.height) || null, at: (cloud && cloud.heightUpdatedAt) || '' };
+  const hWin = (hLocal.at >= hCloud.at || !hCloud.height) ? hLocal : hCloud;
   const payload = {
     todos: section==='todos' ? state.todos : (base.todos||[]).filter(r=>!recordDead(r, t=>t.createdAt, delMap, clearedBase)),
     weights: section==='weights' ? state.weights : (base.weights||[]).filter(r=>!recordDead(r, w=>w.createdAt, delMap, clearedBase)),
     maoyang: section==='maoyang' ? state.maoyang : sanitizeMaoyangForCloud(base.maoyang||{periods:{}}, delMap, clearedBase),
-    height: base.height || state.height || null,
+    height: hWin.height,
+    heightUpdatedAt: hWin.at || null,
     clearedAt: clearedBase,
     deletedIds: delMap,
     dataFixVersion: DATA_FIX_VERSION,
@@ -2286,7 +2344,8 @@ async function confirmUpload(section) {
         todos: section==='todos' ? state.todos : (c2.todos||[]).filter(r=>!recordDead(r, t=>t.createdAt, delMap2, clearedBase2)),
         weights: section==='weights' ? state.weights : (c2.weights||[]).filter(r=>!recordDead(r, w=>w.createdAt, delMap2, clearedBase2)),
         maoyang: section==='maoyang' ? state.maoyang : sanitizeMaoyangForCloud(c2.maoyang||{periods:{}}, delMap2, clearedBase2),
-        height: c2.height || state.height || null,
+        height: ((state.heightUpdatedAt || '') >= ((c2 && c2.heightUpdatedAt) || '') || !(c2 && c2.height)) ? (state.height || null) : (c2.height || null),
+        heightUpdatedAt: ((state.heightUpdatedAt || '') >= ((c2 && c2.heightUpdatedAt) || '')) ? (state.heightUpdatedAt || null) : ((c2 && c2.heightUpdatedAt) || null),
         clearedAt: clearedBase2,
         deletedIds: delMap2,
         dataFixVersion: DATA_FIX_VERSION,
@@ -2386,11 +2445,12 @@ function mergeRemote(remote) {
     let merged = mergeRecords(state.weights, remote.weights, w => w.createdAt || (w.date+'|'+w.period));
     migrateWeights(merged);
     merged = dedupeByContent(merged, weightSlotKey).filter(w => alive(w, w => w.createdAt));
+    merged.sort((a,b)=>new Date(a.date+(a.period==='after'?'T08:00':'T22:00'))-new Date(b.date+(b.period==='after'?'T08:00':'T22:00'))); // v2.3: 合并后重排序，保证"最新"统计取数组末尾即最新
     if (JSON.stringify(merged) !== JSON.stringify(state.weights)) { state.weights = merged; changed = true; }
   }
-  // height: 云端较新时采用云端身高
-  if (remote.height && (!state.height || remote.height !== state.height)) {
-    state.height = remote.height; changed = true;
+  // height: 云端身高修改时间较新时才采用（v2.3 修复：本机刚改的身高不再被云端旧值盖回）
+  if (remote.height && (!state.height || (remote.heightUpdatedAt && remote.heightUpdatedAt > (state.heightUpdatedAt || '')))) {
+    state.height = remote.height; state.heightUpdatedAt = remote.heightUpdatedAt || null; changed = true;
   }
   // maoyang: 按 id（老数据用内容）去重合并，同一记录取较新版本；内容完全相同的只留最新；过滤已删/清空基线前的记录
   if (remote.maoyang && remote.maoyang.periods) {
@@ -2566,9 +2626,11 @@ function applyLocalClear(clearedAt) {
   state.todos = [];
   state.weights = [];
   state.height = null;
+  state.heightUpdatedAt = null;
   state.maoyang = { periods: {} };
   state.clearedAt = clearedAt;
   saveState();
+  scheduleTombstonePush(); // v2.3: 清空基线也随墓碑静默上云，其他设备尽快感知
   switchPage(state.currentPage);
 }
 async function clearAllData() {
