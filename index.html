@@ -680,7 +680,7 @@ tr:hover td { background: #f8faff; }
   </nav>
   <div class="sidebar-footer" style="flex-direction:column;align-items:flex-start;gap:4px">
     <div style="display:flex;justify-content:space-between;width:100%;align-items:center">
-      <span>v2.1</span>
+      <span>v2.2</span>
       <button class="sync-btn" onclick="openSyncPanel()">🔄 同步</button>
     </div>
     <div class="sync-status" id="sync-status-bar">
@@ -942,7 +942,9 @@ let state = {
   todos: [], weights: [], height: null,
   maoyang: { periods: {} },
   currentPeriod: '',
-  currentPage: 'news'
+  currentPage: 'news',
+  deletedIds: {},
+  dataFixVersion: 0
 };
 window.allNews = [];
 window.currentNewsFilter = 'all';
@@ -967,8 +969,15 @@ function loadState() {
       state.height = parsed.height || null;
       state.maoyang = parsed.maoyang || { periods: {} };
       state.clearedAt = parsed.clearedAt || null;
+      state.deletedIds = parsed.deletedIds || {};
+      state.dataFixVersion = parsed.dataFixVersion || 0;
       migrateWeights();
       migrateMaoyang();
+    }
+    if ((state.dataFixVersion || 0) < DATA_FIX_VERSION) {
+      const n = fixDataV1();
+      state.dataFixVersion = DATA_FIX_VERSION;
+      if (n > 0) { saveState(); setTimeout(() => showToast('🧹 已自动清理 ' + n + ' 条重复/已删除的旧数据'), 800); }
     }
   } catch(e) {}
 }
@@ -982,7 +991,90 @@ function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify({
     todos: state.todos, weights: state.weights, maoyang: state.maoyang, height: state.height,
     clearedAt: state.clearedAt || null,
+    deletedIds: state.deletedIds || {},
+    dataFixVersion: state.dataFixVersion || DATA_FIX_VERSION,
   }));
+}
+
+// ===== v2.2 删除同步与数据清理（2026-08-22）=====
+// 背景：旧版合并是纯并集——本地删除的记录云端仍在，下次合并即"复活"；且"清空全部数据"(clearedAt)
+// 不参与合并过滤，清空前的旧记录会随云端回流。v2.2 引入"删除墓碑"(deletedIds: id→删除时间)：
+// 删除操作随 data.json 双向传播，合并/加载时统一过滤，删除永不复活。
+const DATA_FIX_VERSION = 1;
+function sortedDelIds(map) {
+  const out = {};
+  Object.keys(map || {}).sort().forEach(k => { out[k] = map[k]; });
+  return out;
+}
+function mergeDeletedIds(a, b) {
+  const out = Object.assign({}, a || {});
+  Object.keys(b || {}).forEach(k => { if (!out[k] || String(b[k]) > String(out[k])) out[k] = b[k]; });
+  return out;
+}
+function tombstone(key) {
+  if (!key) return;
+  state.deletedIds = state.deletedIds || {};
+  state.deletedIds[key] = new Date().toISOString();
+}
+// 记录已"死亡"：命中删除墓碑；或清空基线(clearedAt)存在时，早于基线/无时间戳的旧格式记录
+function recordDead(r, keyFn, delMap, clearedAt) {
+  const del = delMap || state.deletedIds || {};
+  const ca = clearedAt !== undefined ? clearedAt : state.clearedAt;
+  const k = keyFn ? keyFn(r) : (r && r.id);
+  if (k && del[k]) return true;
+  if (ca && (!r || !r.createdAt || r.createdAt < ca)) return true;
+  return false;
+}
+function maoyangContentKey(r) {
+  return JSON.stringify([r.project||'', r.item||'', r.orderDate||'', String(r.cost||''), String(r.extra||''), String(r.settlement||''), r.tracking||'', r.settleDate||'']);
+}
+function dedupeByContent(arr, keyFn) {
+  const map = new Map();
+  (arr || []).forEach(r => {
+    const k = keyFn(r);
+    const old = map.get(k);
+    if (!old || recTime(r) >= recTime(old)) map.set(k, r);
+  });
+  return [...map.values()];
+}
+function weightSlotKey(w) { return (w.date||'') + '|' + (w.period||''); }
+// 一次性数据修复 v1：清理本地"复活"的已删记录与重复记录；被清理记录写入墓碑，防止再次回流
+function fixDataV1() {
+  let removed = 0;
+  const keepAlive = (arr, keyFn) => (arr || []).filter(r => {
+    if (recordDead(r, keyFn)) { removed++; const k = keyFn(r); if (k) tombstone(k); return false; }
+    return true;
+  });
+  const dedupeT = (arr, keyFn, tkeyFn) => {
+    const map = new Map();
+    (arr || []).forEach(r => {
+      const k = keyFn(r);
+      const old = map.get(k);
+      if (!old) { map.set(k, r); return; }
+      const newer = recTime(r) >= recTime(old);
+      const loser = newer ? old : r;
+      map.set(k, newer ? r : old);
+      removed++;
+      const tk = tkeyFn(loser); if (tk) tombstone(tk);
+    });
+    return [...map.values()];
+  };
+  // 待办：墓碑 + 清空基线过滤（不按文案去重——相同文案的待办可能真实存在多条）
+  state.todos = keepAlive(state.todos, t => t.createdAt);
+  // 体重：过滤后按 日期+时段 去重，只保留最新一次
+  state.weights = dedupeT(keepAlive(state.weights, w => w.createdAt), weightSlotKey, w => w.createdAt);
+  // 羊毛：过滤 → 内容完全相同的只留最新 → 老格式补 id/时间戳
+  Object.keys(state.maoyang.periods || {}).forEach(pk => {
+    let arr = keepAlive(state.maoyang.periods[pk] || [], r => r.id);
+    arr = dedupeT(arr, maoyangContentKey, r => r.id);
+    arr.forEach(r => {
+      if (!r.id) r.id = genId();
+      if (!r.createdAt) r.createdAt = r.updatedAt || new Date().toISOString();
+      if (!r.updatedAt) r.updatedAt = r.createdAt;
+    });
+    state.maoyang.periods[pk] = arr;
+  });
+  return removed;
 }
 
 function getPeriodKey(d) { const dt = new Date(d); return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`; }
@@ -1329,7 +1421,7 @@ function addTodo() {
 }
 function toggleTodo(i) { state.todos[i].done = !state.todos[i].done; state.todos[i].updatedAt = new Date().toISOString(); saveState(); renderTodos(); }
 function editTodoPrompt(i) { const t = prompt('编辑待办:', state.todos[i].text); if (t&&t.trim()) { state.todos[i].text=t.trim(); state.todos[i].updatedAt = new Date().toISOString(); saveState(); renderTodos(); showToast('已更新'); } }
-function deleteTodo(i) { if (confirm('确定删除？')) { state.todos.splice(i,1); saveState(); renderTodos(); showToast('已删除'); } }
+function deleteTodo(i) { if (confirm('确定删除？')) { tombstone(state.todos[i] && state.todos[i].createdAt); state.todos.splice(i,1); saveState(); renderTodos(); showToast('已删除'); } }
 
 // ============ WEIGHT ============
 function renderWeightPage() {
@@ -1489,6 +1581,7 @@ function renderWeightRecords(pk) {
 }
 function deleteWeight(date,period) {
   if (!confirm('确定删除？')) return;
+  state.weights.filter(w=>w.date===date&&w.period===period).forEach(w=>tombstone(w.createdAt));
   state.weights = state.weights.filter(w=>!(w.date===date&&w.period===period));
   saveState(); const pk = getPeriodKey(date);
   renderWeightChart(pk); renderWeightStats(pk); renderWeightRecords(pk); renderMonthSelector(pk); renderWeightAdvice(pk); renderBMI();
@@ -1966,6 +2059,8 @@ function saveMaoyangRecord() {
 }
 function deleteMaoyangRow(i) {
   if (!confirm('确定删除？')) return;
+  const rec = (state.maoyang.periods[state.currentPeriod] || [])[i];
+  if (rec && rec.id) tombstone(rec.id);
   state.maoyang.periods[state.currentPeriod].splice(i,1);
   saveState(); renderMaoyangList(); renderMaoyangSummary(); showToast('已删除');
 }
@@ -2124,7 +2219,8 @@ function getHashOf(obj) {
   // 完整哈希（不截断）：早期 slice(0,50) 只覆盖 JSON 前 50 字符，todos/weights 为空时
   // 云端羊毛数据无论怎么变化 hash 都一样，导致检测不到云端更新（读不到新数据）
   return btoa(unescape(encodeURIComponent(JSON.stringify({
-    todos: obj.todos, weights: obj.weights, maoyang: obj.maoyang, height: obj.height
+    todos: obj.todos, weights: obj.weights, maoyang: obj.maoyang, height: obj.height,
+    deletedIds: sortedDelIds(obj.deletedIds || {})
   }))));
 }
 function getLocalHash() {
@@ -2156,12 +2252,18 @@ async function confirmUpload(section) {
   // 2) 构造上传内容：目标板块用本地覆盖，其他板块保留云端（云端无数据则用本地兜底）
   const cloud = (remote && remote.syncedAt) ? remote : null;
   const base = cloud || { todos: state.todos, weights: state.weights, maoyang: state.maoyang, height: state.height };
+  // 删除墓碑取并集（本机与云端各自记录的删除都保留）；沿用云端的其他板块先过滤已删记录，避免"僵尸"回流
+  const delMap = mergeDeletedIds((cloud && cloud.deletedIds) || {}, state.deletedIds || {});
+  const cClear = (cloud && cloud.clearedAt) || null;
+  const clearedBase = (cClear && state.clearedAt && state.clearedAt > cClear) ? state.clearedAt : (cClear || state.clearedAt || null);
   const payload = {
-    todos: section==='todos' ? state.todos : (base.todos||[]),
-    weights: section==='weights' ? state.weights : (base.weights||[]),
-    maoyang: section==='maoyang' ? state.maoyang : (base.maoyang||{periods:{}}),
+    todos: section==='todos' ? state.todos : (base.todos||[]).filter(r=>!recordDead(r, t=>t.createdAt, delMap, clearedBase)),
+    weights: section==='weights' ? state.weights : (base.weights||[]).filter(r=>!recordDead(r, w=>w.createdAt, delMap, clearedBase)),
+    maoyang: section==='maoyang' ? state.maoyang : sanitizeMaoyangForCloud(base.maoyang||{periods:{}}, delMap, clearedBase),
     height: base.height || state.height || null,
-    clearedAt: (cloud && cloud.clearedAt) || state.clearedAt || null,
+    clearedAt: clearedBase,
+    deletedIds: delMap,
+    dataFixVersion: DATA_FIX_VERSION,
     syncedAt: new Date().toISOString() // 精确到毫秒
   };
   const result = await ghPush(payload);
@@ -2177,12 +2279,17 @@ async function confirmUpload(section) {
     const r2 = await ghFetch();
     if (r2) {
       const c2 = r2.syncedAt ? r2 : payload;
+      const delMap2 = mergeDeletedIds((c2 && c2.deletedIds) || {}, state.deletedIds || {});
+      const cc2 = (c2 && c2.clearedAt) || null;
+      const clearedBase2 = (cc2 && state.clearedAt && state.clearedAt > cc2) ? state.clearedAt : (cc2 || state.clearedAt || null);
       const retry = {
-        todos: section==='todos' ? state.todos : (c2.todos||[]),
-        weights: section==='weights' ? state.weights : (c2.weights||[]),
-        maoyang: section==='maoyang' ? state.maoyang : (c2.maoyang||{periods:{}}),
+        todos: section==='todos' ? state.todos : (c2.todos||[]).filter(r=>!recordDead(r, t=>t.createdAt, delMap2, clearedBase2)),
+        weights: section==='weights' ? state.weights : (c2.weights||[]).filter(r=>!recordDead(r, w=>w.createdAt, delMap2, clearedBase2)),
+        maoyang: section==='maoyang' ? state.maoyang : sanitizeMaoyangForCloud(c2.maoyang||{periods:{}}, delMap2, clearedBase2),
         height: c2.height || state.height || null,
-        clearedAt: (c2 && c2.clearedAt) || state.clearedAt || null,
+        clearedAt: clearedBase2,
+        deletedIds: delMap2,
+        dataFixVersion: DATA_FIX_VERSION,
         syncedAt: new Date().toISOString()
       };
       const rr = await ghPush(retry);
@@ -2225,42 +2332,83 @@ function mergeRecords(localArr, remoteArr, keyFn) {
   return [...map.values()];
 }
 
+// 上传时沿用云端的其他板块：先过滤已删/清空基线前的记录，避免"僵尸记录"回流云端
+function sanitizeMaoyangForCloud(mao, delMap, clearedAt) {
+  const periods = {};
+  Object.keys((mao && mao.periods) || {}).forEach(pk => {
+    periods[pk] = (mao.periods[pk] || []).filter(r => !recordDead(r, r=>r.id, delMap, clearedAt));
+  });
+  return { periods };
+}
+// 静默同步删除基线：合并 clearedAt 与删除墓碑并立即生效（他机删除的记录本机自动清理，不再复活）
+function syncDeletionBaseline(remote) {
+  try {
+    let newerClear = remote.clearedAt && (!state.clearedAt || remote.clearedAt > state.clearedAt);
+    if (newerClear && _declinedClearedAt === remote.clearedAt) newerClear = false; // 用户拒绝过本次云端清空：尊重其保留本机数据的决定
+    const delMap = mergeDeletedIds(state.deletedIds, remote.deletedIds);
+    const delChanged = JSON.stringify(sortedDelIds(delMap)) !== JSON.stringify(sortedDelIds(state.deletedIds || {}));
+    if (!newerClear && !delChanged) return false;
+    state.deletedIds = delMap;
+    if (newerClear) state.clearedAt = remote.clearedAt;
+    const before = JSON.stringify({ t: state.todos, w: state.weights, m: state.maoyang });
+    state.todos = state.todos.filter(t => !recordDead(t, t => t.createdAt));
+    state.weights = state.weights.filter(w => !recordDead(w, w => w.createdAt));
+    Object.keys(state.maoyang.periods || {}).forEach(pk => {
+      state.maoyang.periods[pk] = (state.maoyang.periods[pk] || []).filter(r => !recordDead(r, r => r.id));
+    });
+    saveState();
+    if (JSON.stringify({ t: state.todos, w: state.weights, m: state.maoyang }) !== before) {
+      switchPage(state.currentPage);
+      showToast('🧹 已同步生效：清理了本机已删除的记录');
+    }
+    _lastLocalHash = getLocalHash();
+    return true;
+  } catch(e) { return false; }
+}
 function mergeRemote(remote) {
   if (!remote) return false;
   let changed = false;
-  // todos: 按 createdAt/text 去重，同一记录取修改时间较新的版本
+  // 0) 先同步删除基线：clearedAt 取较新、删除墓碑取并集（删除一旦发生，合并时永远生效）
+  let newerClear = remote.clearedAt && (!state.clearedAt || remote.clearedAt > state.clearedAt);
+  if (newerClear && _declinedClearedAt === remote.clearedAt) newerClear = false; // 用户拒绝过本次云端清空：合并内容但不强制清空本机
+  if (newerClear) state.clearedAt = remote.clearedAt;
+  const delMap = mergeDeletedIds(state.deletedIds, remote.deletedIds);
+  const delChanged = JSON.stringify(sortedDelIds(delMap)) !== JSON.stringify(sortedDelIds(state.deletedIds || {}));
+  if (delChanged) { state.deletedIds = delMap; changed = true; }
+  const alive = (r, keyFn) => !recordDead(r, keyFn);
+  // todos: 按 createdAt/text 去重，同一记录取修改时间较新的版本；过滤已删/清空基线前的记录
   if (Array.isArray(remote.todos)) {
-    const merged = mergeRecords(state.todos, remote.todos, t => t.createdAt || t.text);
+    const merged = mergeRecords(state.todos, remote.todos, t => t.createdAt || t.text).filter(t => alive(t, t => t.createdAt));
     if (JSON.stringify(merged) !== JSON.stringify(state.todos)) { state.todos = merged; changed = true; }
   }
-  // weights: 按 createdAt/date+period 去重，同一记录取较新版本
+  // weights: 按 createdAt/date+period 去重，同一记录取较新版本；同日同时段只留最新；过滤已删/清空基线前的记录
   if (Array.isArray(remote.weights)) {
-    const merged = mergeRecords(state.weights, remote.weights, w => w.createdAt || (w.date+'|'+w.period));
+    let merged = mergeRecords(state.weights, remote.weights, w => w.createdAt || (w.date+'|'+w.period));
     migrateWeights(merged);
+    merged = dedupeByContent(merged, weightSlotKey).filter(w => alive(w, w => w.createdAt));
     if (JSON.stringify(merged) !== JSON.stringify(state.weights)) { state.weights = merged; changed = true; }
   }
   // height: 云端较新时采用云端身高
   if (remote.height && (!state.height || remote.height !== state.height)) {
     state.height = remote.height; changed = true;
   }
-  // maoyang: 按 id（老数据用内容）去重合并，同一记录取较新版本
+  // maoyang: 按 id（老数据用内容）去重合并，同一记录取较新版本；内容完全相同的只留最新；过滤已删/清空基线前的记录
   if (remote.maoyang && remote.maoyang.periods) {
     const merged = { periods: {} };
     const allPeriods = new Set([...Object.keys(state.maoyang.periods||{}), ...Object.keys(remote.maoyang.periods)]);
     allPeriods.forEach(pk => {
-      merged.periods[pk] = mergeRecords(state.maoyang.periods[pk], remote.maoyang.periods[pk], maoyangKey);
+      let arr = mergeRecords(state.maoyang.periods[pk], remote.maoyang.periods[pk], maoyangKey);
+      arr = dedupeByContent(arr, maoyangContentKey).filter(r => alive(r, r => r.id));
+      merged.periods[pk] = arr;
     });
     if (JSON.stringify(merged) !== JSON.stringify(state.maoyang)) { state.maoyang = merged; changed = true; }
-  }
-  // 合并云端数据即接受云端基线：同步 clearedAt，避免已合并过数据的设备每次打开都重复弹"是否清空"
-  if (remote.clearedAt && (!state.clearedAt || remote.clearedAt > state.clearedAt)) {
-    state.clearedAt = remote.clearedAt;
-    saveState();
   }
   if (changed) {
     saveState(); // 仅保存本地，不再自动上传
     migrateMaoyang();
     switchPage(state.currentPage);
+  } else if (newerClear || delChanged) {
+    saveState(); // 仅删除基线变化（如云端墓碑同步）也持久化
   }
   return changed;
 }
@@ -2329,6 +2477,10 @@ let _pendingCloudDiff = null;
 // 渲染并打开云端更新提醒弹窗
 function showCloudUpdateModal(remote) {
   const diff = diffCloud(state, remote);
+  // 本机已删除（墓碑标记）或清空基线前的云端记录不算"云端新增"，避免弹窗误导
+  diff.todos.added = diff.todos.added.filter(r => !recordDead(r, t => t.createdAt));
+  diff.weights.added = diff.weights.added.filter(r => !recordDead(r, w => w.createdAt));
+  diff.maoyang.added = diff.maoyang.added.filter(r => !recordDead(r, r => r.id));
   const localPending = diffCloud(remote, state); // 本地相对云端的更新（未上传）
   _pendingCloudRemote = remote;
   _pendingCloudDiff = diff;
@@ -2520,10 +2672,11 @@ async function checkCloudUpdate(silent, force) {
     setSyncStatus('warning', '云端有更新，点"检查更新"同步');
     return; // 已拒绝过该版本，黄灯常亮但不重复弹窗
   }
-  // 兜底：仅排序等细微差异无实质内容更新时不弹窗
+  // 兜底：仅排序等细微差异无实质内容更新时不弹窗，但静默同步删除基线（他机删除的记录自动生效，不再复活）
   const diff = diffCloud(state, remote);
   const hasContent = diff.todos.added.length + diff.todos.modified.length + diff.weights.added.length + diff.weights.modified.length + diff.maoyang.added.length + diff.maoyang.modified.length > 0;
   if (!hasContent) {
+    syncDeletionBaseline(remote);
     if (!skipSynced) setSyncStatus('synced', '已同步');
     return;
   }
