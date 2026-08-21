@@ -517,6 +517,19 @@
           "project": "快手",
           "item": "提现",
           "orderDate": "2026-08-22",
+          "cost": "15",
+          "extra": "",
+          "settlement": "",
+          "tracking": "",
+          "settleDate": "",
+          "id": "mt355msyybehzj",
+          "createdAt": "2026-08-21T16:05:57.298Z",
+          "updatedAt": "2026-08-21T16:05:57.298Z"
+        },
+        {
+          "project": "快手",
+          "item": "提现",
+          "orderDate": "2026-08-22",
           "cost": "",
           "extra": "",
           "settlement": "15",
@@ -551,5 +564,5 @@
     "2026-08-21T18:29:49.171Z": "2026-08-21T18:30:04.590Z"
   },
   "dataFixVersion": 1,
-  "syncedAt": "2026-08-21T18:30:22.508Z"
+  "syncedAt": "2026-08-21T18:30:36.911Z"
 }
