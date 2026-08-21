@@ -430,6 +430,19 @@
           "updatedAt": "2026-08-19T16:05:30.533Z"
         },
         {
+          "project": "大众",
+          "item": "提现",
+          "orderDate": "",
+          "cost": "",
+          "extra": "",
+          "settlement": "64.04",
+          "tracking": "",
+          "settleDate": "2026-08-20",
+          "id": "mt13fq8ni6zflk",
+          "createdAt": "2026-08-20T05:42:16.724Z",
+          "updatedAt": "2026-08-20T05:42:16.724Z"
+        },
+        {
           "project": "tap好评",
           "item": "钉钉",
           "orderDate": "2026-08-20",
@@ -454,19 +467,6 @@
           "id": "mt1es0kwmrdvdp",
           "createdAt": "2026-08-20T10:59:45.776Z",
           "updatedAt": "2026-08-20T10:59:45.776Z"
-        },
-        {
-          "project": "大众",
-          "item": "提现",
-          "orderDate": "",
-          "cost": "",
-          "extra": "",
-          "settlement": "64.04",
-          "tracking": "",
-          "settleDate": "2026-08-20",
-          "id": "mt13fq8ni6zflk",
-          "createdAt": "2026-08-20T05:42:16.724Z",
-          "updatedAt": "2026-08-20T05:42:16.724Z"
         },
         {
           "project": "大众",
@@ -524,19 +524,6 @@
           "project": "快手",
           "item": "提现",
           "orderDate": "2026-08-22",
-          "cost": "15",
-          "extra": "",
-          "settlement": "",
-          "tracking": "",
-          "settleDate": "",
-          "id": "mt355msyybehzj",
-          "createdAt": "2026-08-21T16:05:57.298Z",
-          "updatedAt": "2026-08-21T16:05:57.298Z"
-        },
-        {
-          "project": "快手",
-          "item": "提现",
-          "orderDate": "2026-08-22",
           "cost": "",
           "extra": "",
           "settlement": "15",
@@ -545,6 +532,19 @@
           "id": "mt35fjv98lj6qf",
           "createdAt": "2026-08-21T16:13:40.053Z",
           "updatedAt": "2026-08-21T16:13:40.053Z"
+        },
+        {
+          "project": "快手",
+          "item": "提现",
+          "orderDate": "2026-08-22",
+          "cost": "15",
+          "extra": "",
+          "settlement": "",
+          "tracking": "",
+          "settleDate": "",
+          "id": "mt355msyybehzj",
+          "createdAt": "2026-08-21T16:05:57.298Z",
+          "updatedAt": "2026-08-21T16:05:57.298Z"
         },
         {
           "project": "助力",
@@ -584,5 +584,5 @@
     "2026-08-21T18:29:49.171Z": "2026-08-21T18:30:04.590Z"
   },
   "dataFixVersion": 1,
-  "syncedAt": "2026-08-21T18:32:07.201Z"
+  "syncedAt": "2026-08-21T18:34:00.636Z"
 }
