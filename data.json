@@ -287,45 +287,6 @@
           "updatedAt": "2026-08-16T16:18:15.400Z"
         },
         {
-          "project": "大众",
-          "item": "辉100头",
-          "orderDate": "2026-08-18",
-          "cost": "32.5",
-          "extra": "",
-          "settlement": "",
-          "tracking": "",
-          "settleDate": "",
-          "id": "msxfh77s5f1v6f",
-          "createdAt": "2026-08-17T16:08:16.072Z",
-          "updatedAt": "2026-08-17T16:08:16.072Z"
-        },
-        {
-          "project": "大众",
-          "item": "提现",
-          "orderDate": "2026-08-18",
-          "cost": "",
-          "extra": "",
-          "settlement": "16",
-          "tracking": "",
-          "settleDate": "2026-08-18",
-          "id": "msxfhmowu78p9n",
-          "createdAt": "2026-08-17T16:08:36.128Z",
-          "updatedAt": "2026-08-17T16:08:36.128Z"
-        },
-        {
-          "project": "大众",
-          "item": "提现",
-          "orderDate": "",
-          "cost": "",
-          "extra": "",
-          "settlement": "20",
-          "tracking": "",
-          "settleDate": "2026-08-17",
-          "id": "msxfklqmjlfq42",
-          "createdAt": "2026-08-17T16:10:54.862Z",
-          "updatedAt": "2026-08-17T16:10:54.862Z"
-        },
-        {
           "project": "快手",
           "item": "提现",
           "orderDate": "2026-08-17",
@@ -376,6 +337,45 @@
           "id": "msyjv4dpylav0z",
           "createdAt": "2026-08-18T10:58:50.221Z",
           "updatedAt": "2026-08-18T10:58:50.221Z"
+        },
+        {
+          "project": "大众",
+          "item": "辉100头",
+          "orderDate": "2026-08-18",
+          "cost": "32.5",
+          "extra": "",
+          "settlement": "",
+          "tracking": "",
+          "settleDate": "",
+          "id": "msxfh77s5f1v6f",
+          "createdAt": "2026-08-17T16:08:16.072Z",
+          "updatedAt": "2026-08-17T16:08:16.072Z"
+        },
+        {
+          "project": "大众",
+          "item": "提现",
+          "orderDate": "2026-08-18",
+          "cost": "",
+          "extra": "",
+          "settlement": "16",
+          "tracking": "",
+          "settleDate": "2026-08-18",
+          "id": "msxfhmowu78p9n",
+          "createdAt": "2026-08-17T16:08:36.128Z",
+          "updatedAt": "2026-08-17T16:08:36.128Z"
+        },
+        {
+          "project": "大众",
+          "item": "提现",
+          "orderDate": "",
+          "cost": "",
+          "extra": "",
+          "settlement": "20",
+          "tracking": "",
+          "settleDate": "2026-08-17",
+          "id": "msxfklqmjlfq42",
+          "createdAt": "2026-08-17T16:10:54.862Z",
+          "updatedAt": "2026-08-17T16:10:54.862Z"
         },
         {
           "project": "大众",
@@ -584,5 +584,5 @@
     "2026-08-21T18:29:49.171Z": "2026-08-21T18:30:04.590Z"
   },
   "dataFixVersion": 1,
-  "syncedAt": "2026-08-21T18:34:00.636Z"
+  "syncedAt": "2026-08-21T18:49:15.558Z"
 }
