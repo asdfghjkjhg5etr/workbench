@@ -112,19 +112,6 @@
           "settlement": "",
           "tracking": "",
           "settleDate": "",
-          "id": "msvb9bzkfzna2j",
-          "createdAt": "2026-08-16T04:34:38.192Z",
-          "updatedAt": "2026-08-16T04:34:38.192Z"
-        },
-        {
-          "project": "大众",
-          "item": "辉100头",
-          "orderDate": "2026-08-14",
-          "cost": "11.5",
-          "extra": "",
-          "settlement": "",
-          "tracking": "",
-          "settleDate": "",
           "id": "msvbaes5dgqeoq",
           "createdAt": "2026-08-16T04:35:28.469Z",
           "updatedAt": "2026-08-16T04:35:28.469Z"
@@ -145,28 +132,15 @@
         {
           "project": "大众",
           "item": "辉100头",
-          "orderDate": "2026-08-15",
-          "cost": "11.5",
-          "extra": "",
-          "settlement": "",
-          "tracking": "",
-          "settleDate": "",
-          "id": "msvbc2l7wu6iyv",
-          "createdAt": "2026-08-16T04:36:45.979Z",
-          "updatedAt": "2026-08-16T04:36:45.979Z"
-        },
-        {
-          "project": "大众",
-          "item": "辉100头",
           "orderDate": "2026-08-16",
           "cost": "11.5",
           "extra": "",
           "settlement": "",
           "tracking": "",
           "settleDate": "",
-          "id": "msvbcrv5d4ozxi",
-          "createdAt": "2026-08-16T04:37:18.737Z",
-          "updatedAt": "2026-08-16T04:37:18.737Z"
+          "id": "msvwi6yxbw7mqo",
+          "createdAt": "2026-08-16T14:29:23.529Z",
+          "updatedAt": "2026-08-16T14:29:23.529Z"
         },
         {
           "project": "快手",
@@ -271,19 +245,6 @@
           "id": "msvbopwvyxx93d",
           "createdAt": "2026-08-16T04:46:36.079Z",
           "updatedAt": "2026-08-16T04:46:36.079Z"
-        },
-        {
-          "project": "大众",
-          "item": "辉100头",
-          "orderDate": "2026-08-16",
-          "cost": "11.5",
-          "extra": "",
-          "settlement": "",
-          "tracking": "",
-          "settleDate": "",
-          "id": "msvwi6yxbw7mqo",
-          "createdAt": "2026-08-16T14:29:23.529Z",
-          "updatedAt": "2026-08-16T14:29:23.529Z"
         },
         {
           "project": "大众",
@@ -557,198 +518,26 @@
           "id": "mt35fjv98lj6qf",
           "createdAt": "2026-08-21T16:13:40.053Z",
           "updatedAt": "2026-08-21T16:13:40.053Z"
-        },
-        {
-          "item": "大众80头",
-          "orderDate": "2026-08-12",
-          "cost": "10.3",
-          "settlement": "",
-          "tracking": "",
-          "settleDate": "",
-          "project": "酷奇",
-          "extra": ""
-        },
-        {
-          "item": "JD快递",
-          "orderDate": "2026-08-12",
-          "cost": "",
-          "settlement": "6.94",
-          "tracking": "",
-          "settleDate": "",
-          "extra": ""
-        },
-        {
-          "item": "JD快递",
-          "orderDate": "2026-08-12",
-          "cost": "0",
-          "settlement": "13.93",
-          "tracking": "",
-          "settleDate": "",
-          "extra": ""
-        },
-        {
-          "item": "酷奇大众80头",
-          "orderDate": "2026-08-12",
-          "cost": "10.3",
-          "settlement": "5.5",
-          "tracking": "",
-          "settleDate": "",
-          "project": "持续回款",
-          "extra": ""
-        },
-        {
-          "item": "大众",
-          "orderDate": "2026-08-13",
-          "cost": "9.8",
-          "settlement": "",
-          "tracking": "",
-          "settleDate": "",
-          "project": "持续",
-          "extra": ""
-        },
-        {
-          "item": "快手700头",
-          "orderDate": "2026-08-13",
-          "cost": "8",
-          "settlement": "",
-          "tracking": "",
-          "settleDate": "",
-          "project": "持续",
-          "extra": ""
-        },
-        {
-          "item": "oppo",
-          "orderDate": "2026-08-13",
-          "cost": "",
-          "settlement": "13.58",
-          "tracking": "",
-          "settleDate": "",
-          "extra": ""
-        },
-        {
-          "item": "助力",
-          "orderDate": "",
-          "cost": "",
-          "settlement": "1",
-          "tracking": "",
-          "settleDate": "2026-08-13",
-          "extra": ""
-        },
-        {
-          "item": "大众",
-          "orderDate": "2026-08-13",
-          "cost": "9.8",
-          "settlement": "8",
-          "tracking": "",
-          "settleDate": "2026-08-14",
-          "id": "msrq6olhsksq98",
-          "createdAt": "2026-08-13T16:21:24.101Z",
-          "updatedAt": "2026-08-13T16:25:13.875Z",
-          "project": "持续",
-          "extra": ""
-        },
-        {
-          "item": "辉o大众100头",
-          "orderDate": "2026-08-14",
-          "cost": "11.3",
-          "settlement": "",
-          "tracking": "",
-          "settleDate": "",
-          "id": "msrqc9xd1tu5iv",
-          "createdAt": "2026-08-13T16:25:45.025Z",
-          "updatedAt": "2026-08-13T16:26:24.564Z",
-          "project": "持续",
-          "extra": ""
-        },
-        {
-          "item": "辉ios大众100",
-          "orderDate": "2026-08-14",
-          "cost": "11.3",
-          "settlement": "",
-          "tracking": "",
-          "settleDate": "",
-          "id": "msrqcq1k1qn6hb",
-          "createdAt": "2026-08-13T16:26:05.912Z",
-          "updatedAt": "2026-08-13T16:26:36.292Z",
-          "project": "持续",
-          "extra": ""
-        },
-        {
-          "item": "oppo",
-          "orderDate": "",
-          "cost": "",
-          "settlement": "17.92",
-          "tracking": "",
-          "settleDate": "",
-          "id": "msrsh9wuju9z5l",
-          "createdAt": "2026-08-13T17:25:37.518Z",
-          "updatedAt": "2026-08-13T17:25:37.518Z",
-          "extra": ""
-        },
-        {
-          "item": "抖音代买",
-          "orderDate": "2026-08-14",
-          "cost": "",
-          "settlement": "5",
-          "tracking": "",
-          "settleDate": "",
-          "id": "mst1xc0e7qtlte",
-          "createdAt": "2026-08-14T14:37:49.454Z",
-          "updatedAt": "2026-08-14T14:37:49.454Z",
-          "extra": ""
-        },
-        {
-          "item": "PDD刷单",
-          "orderDate": "2026-08-14",
-          "cost": "74.5",
-          "settlement": "",
-          "tracking": "",
-          "settleDate": "",
-          "id": "mst1yt9us3hyp5",
-          "createdAt": "2026-08-14T14:38:58.482Z",
-          "updatedAt": "2026-08-14T14:38:58.482Z",
-          "extra": ""
-        },
-        {
-          "item": "快手700",
-          "orderDate": "2026-08-14",
-          "cost": "8",
-          "settlement": "15",
-          "tracking": "",
-          "settleDate": "",
-          "id": "mst3nar3ayuvth",
-          "createdAt": "2026-08-14T15:26:00.495Z",
-          "updatedAt": "2026-08-14T15:26:00.495Z",
-          "extra": ""
-        },
-        {
-          "item": "大众*2",
-          "orderDate": "2026-08-15",
-          "cost": "23",
-          "settlement": "",
-          "tracking": "",
-          "settleDate": "",
-          "id": "mst52hw4itzsoz",
-          "createdAt": "2026-08-14T16:05:49.203Z",
-          "updatedAt": "2026-08-14T16:05:49.203Z",
-          "extra": ""
-        },
-        {
-          "item": "oppo",
-          "orderDate": "2026-08-15",
-          "cost": "8.24",
-          "settlement": "",
-          "tracking": "",
-          "settleDate": "",
-          "id": "mst6gf6az5ev0q",
-          "createdAt": "2026-08-14T16:44:38.482Z",
-          "updatedAt": "2026-08-14T16:44:38.482Z",
-          "extra": ""
         }
       ]
     }
   },
   "height": 180,
   "clearedAt": "2026-08-16T04:23:33.973Z",
-  "syncedAt": "2026-08-21T16:31:15.583Z"
+  "deletedIds": {
+    "msrq6olhsksq98": "2026-08-21T17:02:36.057Z",
+    "msrqc9xd1tu5iv": "2026-08-21T17:02:36.057Z",
+    "msrqcq1k1qn6hb": "2026-08-21T17:02:36.057Z",
+    "msrsh9wuju9z5l": "2026-08-21T17:02:36.057Z",
+    "mst1xc0e7qtlte": "2026-08-21T17:02:36.057Z",
+    "mst1yt9us3hyp5": "2026-08-21T17:02:36.057Z",
+    "mst3nar3ayuvth": "2026-08-21T17:02:36.057Z",
+    "mst52hw4itzsoz": "2026-08-21T17:02:36.057Z",
+    "mst6gf6az5ev0q": "2026-08-21T17:02:36.057Z",
+    "msvb9bzkfzna2j": "2026-08-21T17:02:36.057Z",
+    "msvbc2l7wu6iyv": "2026-08-21T17:02:36.057Z",
+    "msvbcrv5d4ozxi": "2026-08-21T17:02:36.057Z"
+  },
+  "dataFixVersion": 1,
+  "syncedAt": "2026-08-21T17:02:36.057Z"
 }
