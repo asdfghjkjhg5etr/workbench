@@ -680,7 +680,7 @@ tr:hover td { background: #f8faff; }
   </nav>
   <div class="sidebar-footer" style="flex-direction:column;align-items:flex-start;gap:4px">
     <div style="display:flex;justify-content:space-between;width:100%;align-items:center">
-      <span>v2.3</span>
+      <span>v2.4</span>
       <button class="sync-btn" onclick="openSyncPanel()">🔄 同步</button>
     </div>
     <div class="sync-status" id="sync-status-bar">
@@ -853,7 +853,12 @@ tr:hover td { background: #f8faff; }
     </div>
     <div class="sync-section">
       <h4>☁️ 云端同步</h4>
-      <p>数据不会自动上传。修改数据后点击各板块右上角【确认上传】手动覆盖云端；打开工作台时若云端有更新会提醒，可手动更新或拒绝。读取无需 Token，写入需要配置。</p>
+      <p>两种模式：<b>自动同步</b>（多设备推荐）——本机改动自动上传、云端更新自动合并、打开页面即同步；<b>手动模式</b>——修改后点各板块右上角【确认上传】，云端有更新时提醒。读取无需 Token，写入需要配置。</p>
+      <div style="margin-top:10px;display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg-secondary,#f5f6fa);border-radius:8px">
+        <input type="checkbox" id="auto-sync-toggle" onchange="toggleAutoSync(this.checked)" style="width:auto;margin:0">
+        <label for="auto-sync-toggle" style="margin:0;font-weight:600;cursor:pointer">🔄 自动同步（多设备模式）</label>
+      </div>
+      <p style="font-size:12px;color:var(--text-muted);margin-top:6px">开启后：本机任何改动约 5 秒后自动上传云端；云端有其他设备的更新会自动合并进来；打开或切回页面立即同步一次。需已配置 Token。</p>
       <div class="form-group">
         <label>GitHub Personal Access Token</label>
         <input type="password" id="gh-token-input" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" style="font-family:monospace;font-size:13px">
@@ -871,6 +876,7 @@ tr:hover td { background: #f8faff; }
         <button class="btn btn-outline btn-sm" onclick="syncNow()" id="sync-now-btn">🔄 检查更新</button>
       </div>
       <p style="font-size:12px;color:var(--text-muted);margin-top:8px" id="cloud-sync-info">未配置云端同步</p>
+      <p style="font-size:12px;color:var(--text-muted);margin-top:2px" id="last-sync-info">尚未同步</p>
     </div>
     <div class="sync-section" style="border:1px solid var(--danger);background:#fef2f2">
       <h4 style="color:var(--danger)">🗑️ 清空全部数据</h4>
@@ -996,6 +1002,7 @@ function saveState() {
     deletedIds: state.deletedIds || {},
     dataFixVersion: state.dataFixVersion || DATA_FIX_VERSION,
   }));
+  if (!_syncInternal) scheduleAutoSync(); // v2.4: 改动后自动上传（同步流程内部除外，防循环）
 }
 
 // ===== v2.2 删除同步与数据清理（2026-08-22）=====
@@ -2168,7 +2175,7 @@ function saveGhToken() {
   localStorage.setItem('wb_gh_token', btoa(v));
   _cloudEnabled = true;
   showToast('Token 已保存');
-  document.getElementById('cloud-sync-info').textContent = '✅ 云端同步已启用（手动上传）';
+  document.getElementById('cloud-sync-info').textContent = isAutoSyncOn() ? '✅ 云端同步已启用（自动同步）' : '✅ 云端同步已启用（手动上传）';
   setSyncStatus('synced', '已连接云端');
 }
 function setSyncStatus(cls, text) {
@@ -2179,29 +2186,61 @@ function setSyncStatus(cls, text) {
 }
 
 let _lastFetchError = ''; // 最近一次云端读取失败原因（用于诊断）
+let _fetchVia = 'api'; // 本次读取走的通道（api/raw/cdn，用于诊断）
+const GH_RAW = `https://raw.githubusercontent.com/${GH_OWNER}/${GH_REPO}/main/${GH_FILE}`;
+const GH_CDN = `https://cdn.jsdelivr.net/gh/${GH_OWNER}/${GH_REPO}@main/${GH_FILE}`;
 async function ghFetch() {
   const headers = {};
   const token = getGhToken();
   if (token) headers['Authorization'] = 'Bearer ' + token;
+  // 通道 1：GitHub Contents API（权威数据 + 乐观锁 sha）
   try {
     const resp = await fetch(GH_API, { headers, signal: timeoutSignal(8000) });
-    if (!resp.ok) {
-      _lastFetchError = 'HTTP ' + resp.status + (resp.status === 403 ? '（可能是 API 限流，稍后再试）' : '');
-      return null;
+    if (resp.ok) {
+      const data = await resp.json();
+      if (data.content) {
+        _lastSyncSha = data.sha;
+        const decoded = JSON.parse(decodeURIComponent(escape(atob(data.content.replace(/\s/g,'')))));
+        _lastFetchError = '';
+        _fetchVia = 'api';
+        return decoded;
+      }
+      _lastFetchError = '云端文件为空或过大';
+    } else {
+      _lastFetchError = 'HTTP ' + resp.status + (resp.status === 403 ? '（可能是 API 限流）' : '');
     }
-    const data = await resp.json();
-    if (!data.content) { _lastFetchError = '云端文件为空或过大'; return null; }
-    _lastSyncSha = data.sha;
-    const decoded = JSON.parse(decodeURIComponent(escape(atob(data.content.replace(/\s/g,'')))));
-    _lastFetchError = '';
-    return decoded;
-  } catch(e) { _lastFetchError = '网络/解码失败: ' + (e && e.message ? e.message : e); return null; }
+  } catch(e) { _lastFetchError = '网络/解码失败: ' + (e && e.message ? e.message : e); }
+  // 通道 2/3：备用直链（v2.4：手机网络访问 api.github.com 不稳时兜底；jsDelivr 可能有数小时缓存，
+  // 但合并逻辑幂等且墓碑安全，读到稍旧数据不会造成丢失，后续经 API 的同步会自动追平）
+  for (const pair of [['raw', GH_RAW], ['cdn', GH_CDN]]) {
+    try {
+      const resp = await fetch(pair[1], { signal: timeoutSignal(8000), cache: 'no-cache' });
+      if (!resp.ok) continue;
+      const decoded = JSON.parse(await resp.text());
+      if (decoded && decoded.syncedAt) {
+        _lastSyncSha = null; // 备用通道拿不到 sha：推送前 ghPush 会经 API 重新获取
+        _lastFetchError = '';
+        _fetchVia = pair[0];
+        return decoded;
+      }
+    } catch(e) {}
+  }
+  if (!_lastFetchError) _lastFetchError = '所有通道均无法读取云端数据';
+  return null;
 }
 
 async function ghPush(content) {
   const token = getGhToken();
   if (!token) return false;
   try {
+    // v2.4: sha 未知（如刚走备用通道读取、或上次推送冲突后置空）→ 先经 API 取当前 sha 再推
+    if (!_lastSyncSha) {
+      const meta = await fetch(GH_API, { headers: { 'Authorization': 'Bearer ' + token }, signal: timeoutSignal(8000) });
+      if (!meta.ok) return false;
+      const md = await meta.json();
+      if (!md.content) return false; // 云端文件不存在：不创建，保护仓库
+      _lastSyncSha = md.sha;
+    }
     const body = {
       message: '🌐 云端同步 ' + new Date().toISOString(),
       content: btoa(unescape(encodeURIComponent(JSON.stringify(content, null, 2)))),
@@ -2278,6 +2317,128 @@ async function pushTombstonesToCloud() {
 }
 function getLocalHash() {
   return getHashOf(state);
+}
+
+// ===== v2.4: 自动同步（多设备模式：一部电脑 + 多台手机）=====
+// 改动后约 5 秒自动上传（防抖合并多次操作）；云端更新静默合并（不再弹窗）；打开/切回页面立即同步；
+// 失败自动重试（60 秒后）；推送前先拉取合并云端（多设备并发写安全，取并集）。
+let _autoSyncTimer = null;
+let _autoSyncBusy = false;
+let _autoSyncPending = false; // 同步进行中收到的新改动：本轮结束后补推一次
+let _autoRetryTimer = null;
+let _syncInternal = false; // 同步流程内部的 saveState 不再触发调度（防循环）
+let _lastVisiblePull = 0;
+
+function isAutoSyncOn() {
+  try { return localStorage.getItem('wb_auto_sync') !== '0'; } catch(e) { return true; }
+}
+function setLastSyncInfo() {
+  const el = document.getElementById('last-sync-info');
+  if (!el) return;
+  let t = '';
+  try { t = localStorage.getItem('wb_last_sync') || ''; } catch(e) {}
+  el.textContent = t ? ('上次同步：' + fmtSyncTime(t)) : '尚未同步';
+}
+function toggleAutoSync(on) {
+  try { localStorage.setItem('wb_auto_sync', on ? '1' : '0'); } catch(e) {}
+  showToast(on ? '🔄 自动同步已开启：改动自动上传，云端更新自动合并' : '已切换为手动模式：改动后需手动点【确认上传】');
+  const info = document.getElementById('cloud-sync-info');
+  if (info && _cloudEnabled) info.textContent = on ? '✅ 云端同步已启用（自动同步）' : '✅ 云端同步已启用（手动上传）';
+  setLastSyncInfo();
+  if (on && _cloudEnabled) autoSyncNow();
+}
+function scheduleAutoSync(delay) {
+  if (!_cloudEnabled || !getGhToken() || !isAutoSyncOn()) return;
+  if (_autoSyncBusy) { _autoSyncPending = true; return; } // 同步进行中：结束后若仍有改动会自动补推
+  if (_autoSyncTimer) clearTimeout(_autoSyncTimer);
+  _autoSyncTimer = setTimeout(autoSyncNow, delay || 5000);
+}
+// 统一构造上传内容：本地（已合并云端）全量 + 墓碑并集 + 清空基线取较新 + 身高取修改时间较新的一方
+function buildSyncPayload(local, remote) {
+  const delMap = mergeDeletedIds((remote && remote.deletedIds) || {}, local.deletedIds || {});
+  const cClear = (remote && remote.clearedAt) || null;
+  const lClear = local.clearedAt || null;
+  const clearedBase = (lClear && cClear && lClear > cClear) ? lClear : (cClear || lClear || null);
+  const hLocal = { height: local.height || null, at: local.heightUpdatedAt || '' };
+  const hCloud = { height: (remote && remote.height) || null, at: (remote && remote.heightUpdatedAt) || '' };
+  const hWin = (hLocal.at >= hCloud.at || !hCloud.height) ? hLocal : hCloud;
+  return {
+    todos: (local.todos||[]).filter(r=>!recordDead(r, t=>t.createdAt, delMap, clearedBase)),
+    weights: (local.weights||[]).filter(r=>!recordDead(r, w=>w.createdAt, delMap, clearedBase)),
+    maoyang: sanitizeMaoyangForCloud(local.maoyang||{periods:{}}, delMap, clearedBase),
+    height: hWin.height,
+    heightUpdatedAt: hWin.at || null,
+    clearedAt: clearedBase,
+    deletedIds: delMap,
+    dataFixVersion: DATA_FIX_VERSION,
+    syncedAt: new Date().toISOString()
+  };
+}
+async function autoSyncNow(manual) {
+  if (!_cloudEnabled || !getGhToken() || !isAutoSyncOn()) {
+    if (manual) showToast('请先保存 Token 并开启自动同步');
+    return;
+  }
+  if (_autoSyncBusy) { if (manual) showToast('⏳ 正在同步中...'); return; }
+  _autoSyncBusy = true;
+  let needRetry = false;
+  try {
+    setSyncStatus('syncing', '同步中...');
+    const remote = await ghFetch();
+    if (!remote) { setSyncStatus('warning', '连不上云端，稍后自动重试'); needRetry = true; return; }
+    let remoteChanged = false;
+    if (remote.syncedAt) {
+      _syncInternal = true;
+      try { remoteChanged = mergeRemote(remote); } finally { _syncInternal = false; }
+    }
+    if (getLocalHash() === getHashOf(remote)) {
+      _lastLocalHash = getLocalHash();
+      setSyncStatus('synced', '已同步');
+      if (manual) showToast('✅ 已是最新，无需同步');
+      else if (remoteChanged) showToast('🔄 已自动同步云端更新');
+      return;
+    }
+    // 防误删保护：本机全空但云端有数据 → 跳过上传（防止异常状态下清空云端）
+    const cnt = a => (a||[]).length;
+    const localTotal = cnt(state.todos) + cnt(state.weights) + Object.values(state.maoyang.periods||{}).reduce((s,a)=>s+cnt(a),0);
+    const remoteTotal = cnt(remote.todos) + cnt(remote.weights) + Object.values((remote.maoyang && remote.maoyang.periods)||{}).reduce((s,a)=>s+cnt(a),0);
+    if (localTotal === 0 && remoteTotal > 0) {
+      setSyncStatus('warning', '本机无数据，已跳过上传（保护云端）');
+      return;
+    }
+    let r = await ghPush(buildSyncPayload(state, remote));
+    if (r === 'conflict') {
+      // 云端刚被其他设备改动：重新拉取合并后再推一次
+      const r2 = await ghFetch();
+      if (r2 && r2.syncedAt) {
+        _syncInternal = true;
+        try { mergeRemote(r2); } finally { _syncInternal = false; }
+        r = await ghPush(buildSyncPayload(state, r2));
+      } else { needRetry = true; return; }
+    }
+    if (r === true) {
+      _lastLocalHash = getLocalHash();
+      const t = new Date().toISOString();
+      try { localStorage.setItem('wb_last_sync', t); } catch(e) {}
+      setLastSyncInfo();
+      setSyncStatus('synced', '已同步 ' + fmtSyncTime(t));
+      if (manual) showToast('✅ 同步完成');
+      else if (remoteChanged) showToast('🔄 已自动同步：云端更新已合并');
+    } else {
+      setSyncStatus('warning', '自动上传失败，稍后自动重试');
+      needRetry = true;
+    }
+  } catch(e) {
+    setSyncStatus('warning', '同步异常，稍后自动重试');
+    needRetry = true;
+  } finally {
+    _autoSyncBusy = false;
+    if (_autoSyncPending && !needRetry) { _autoSyncPending = false; scheduleAutoSync(); }
+    // v2.4 修复：重试调度必须放在 finally 里——上面的 return 分支（如连不上云端）会跳过 finally 之后的代码
+    if (needRetry && !_autoRetryTimer) {
+      _autoRetryTimer = setTimeout(() => { _autoRetryTimer = null; autoSyncNow(); }, 60000);
+    }
+  }
 }
 
 // ===== 手动确认上传：本地数据覆盖云端对应板块 =====
@@ -2687,6 +2848,8 @@ async function checkCloudUpdate(silent, force) {
       // 定时后台检查：已拒绝过该次清空则继续看有没有清空后的新数据，否则轻提醒
       if (_declinedClearedAt === remote.clearedAt) {
         // 继续走下方 diff
+      } else if (isAutoSyncOn() && _cloudEnabled && getGhToken()) {
+        // v2.4 自动模式：不拦截，走下方静默合并（mergeRemote 会同步清空基线并过滤清空前的记录）
       } else {
         setSyncStatus('warning', '云端已清空全部数据，点"检查更新"处理');
         return;
@@ -2743,8 +2906,17 @@ async function checkCloudUpdate(silent, force) {
     return;
   }
   if (silent) {
-    setSyncStatus('warning', '云端有更新，可手动更新');
-    showToast('🔄 云端有更新，点击"检查更新"可手动同步');
+    if (isAutoSyncOn() && _cloudEnabled && getGhToken()) {
+      // v2.4 自动模式：静默合并云端更新（含他机删除/清空基线）；本机若有未上传改动随后自动上传
+      const changed = mergeRemote(remote);
+      _lastLocalHash = getLocalHash();
+      if (getLocalHash() !== getHashOf(remote)) scheduleAutoSync();
+      if (changed) showToast('🔄 已自动同步云端更新');
+      setSyncStatus('synced', changed ? '已自动合并云端更新' : '已同步');
+    } else {
+      setSyncStatus('warning', '云端有更新，可手动更新');
+      showToast('🔄 云端有更新，点击"检查更新"可手动同步');
+    }
     return;
   }
   // 主动检查 / 打开工作台：弹明细弹窗
@@ -2752,35 +2924,55 @@ async function checkCloudUpdate(silent, force) {
 }
 
 async function syncNow() {
-  // 手动检查：强制弹窗（即使之前拒绝过）
-  await checkCloudUpdate(false, true);
+  // 手动检查：自动模式下直接做一次完整双向同步；手动模式强制弹窗（即使之前拒绝过）
+  if (isAutoSyncOn() && _cloudEnabled && getGhToken()) {
+    await autoSyncNow(true);
+  } else {
+    await checkCloudUpdate(false, true);
+  }
 }
 
 // 数据保存：仅写入本地 localStorage，不再自动上传云端
 // 上传改为手动：各板块右上角"确认上传"按钮（confirmUpload）
 
-// Periodic pull: 定时检查云端是否有更新（只读提醒，不自动推送、不自动合并）
+// Periodic pull: 定时保持与云端一致
+// 自动模式：每 2 分钟完整双向同步（拉取合并 + 需要时上传）；手动模式：每 5 分钟只读提醒
 let _pullInterval = null;
 function startAutoPull() {
   if (_pullInterval) clearInterval(_pullInterval);
   _pullInterval = setInterval(async () => {
-    await checkCloudUpdate(true);
-  }, PULL_INTERVAL);
+    if (isAutoSyncOn() && _cloudEnabled && getGhToken()) await autoSyncNow();
+    else await checkCloudUpdate(true);
+  }, 120000);
 }
 
 async function initCloudSync() {
   const token = getGhToken();
+  const auto = isAutoSyncOn();
+  const toggle = document.getElementById('auto-sync-toggle');
+  if (toggle) toggle.checked = auto;
   if (token) {
     _cloudEnabled = true;
-    document.getElementById('cloud-sync-info').textContent = '✅ 云端同步已启用（手动上传）';
+    document.getElementById('cloud-sync-info').textContent = auto ? '✅ 云端同步已启用（自动同步）' : '✅ 云端同步已启用（手动上传）';
     setSyncStatus('syncing', '连接中...');
     document.getElementById('gh-token-input').value = token;
   } else {
-    document.getElementById('cloud-sync-info').textContent = '⚠️ 未配置 Token，仅可读取云端数据';
+    document.getElementById('cloud-sync-info').textContent = '⚠️ 未配置 Token，仅可读取云端数据（自动上传需配置）';
   }
-  // 打开工作台：检查云端是否有更新，提醒用户手动更新或拒绝
+  setLastSyncInfo();
   startAutoPull();
-  await checkCloudUpdate(false);
+  // 打开工作台：自动模式直接完整同步；手动模式提醒用户更新或拒绝
+  if (token && auto) await autoSyncNow();
+  else await checkCloudUpdate(false);
+  // v2.4: 手机切回浏览器标签页/从后台切回时立即同步（至少间隔 30 秒，省流量省电）
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') return;
+    if (!isAutoSyncOn() || !_cloudEnabled || !getGhToken()) return;
+    const now = Date.now();
+    if (now - _lastVisiblePull < 30000) return;
+    _lastVisiblePull = now;
+    autoSyncNow();
+  });
 }
 
 // ============ INIT ============
