@@ -598,6 +598,19 @@
           "id": "mt606msv7sdchj",
           "createdAt": "2026-08-23T16:10:04.399Z",
           "updatedAt": "2026-08-23T16:10:04.399Z"
+        },
+        {
+          "project": "大众",
+          "item": "提现",
+          "orderDate": "2026-08-24",
+          "cost": "",
+          "extra": "",
+          "settlement": "24",
+          "tracking": "",
+          "settleDate": "",
+          "id": "mt607bmut3uav4",
+          "createdAt": "2026-08-23T16:10:36.582Z",
+          "updatedAt": "2026-08-23T16:10:36.582Z"
         }
       ]
     }
@@ -624,5 +637,5 @@
     "2026-08-21T18:29:49.171Z": "2026-08-21T18:30:04.590Z"
   },
   "dataFixVersion": 1,
-  "syncedAt": "2026-08-23T16:10:09.408Z"
+  "syncedAt": "2026-08-23T16:10:42.499Z"
 }
