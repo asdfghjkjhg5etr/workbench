@@ -611,6 +611,19 @@
           "id": "mt607bmut3uav4",
           "createdAt": "2026-08-23T16:10:36.582Z",
           "updatedAt": "2026-08-23T16:10:36.582Z"
+        },
+        {
+          "project": "抖音",
+          "item": "极速版",
+          "orderDate": "2026-08-24",
+          "cost": "0",
+          "extra": "",
+          "settlement": "1.3",
+          "tracking": "",
+          "settleDate": "",
+          "id": "mt60ndk1qrb49s",
+          "createdAt": "2026-08-23T16:23:05.569Z",
+          "updatedAt": "2026-08-23T16:23:05.569Z"
         }
       ]
     }
@@ -637,5 +650,5 @@
     "2026-08-21T18:29:49.171Z": "2026-08-21T18:30:04.590Z"
   },
   "dataFixVersion": 1,
-  "syncedAt": "2026-08-23T16:10:48.212Z"
+  "syncedAt": "2026-08-23T16:23:11.224Z"
 }
