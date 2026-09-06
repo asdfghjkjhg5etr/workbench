@@ -743,8 +743,48 @@
           "id": "mtcb6f1zgc8i9e",
           "createdAt": "2026-08-28T02:04:27.191Z",
           "updatedAt": "2026-08-28T02:04:27.191Z"
+        },
+        {
+          "project": "大众",
+          "item": "辉100头",
+          "orderDate": "2026-08-31",
+          "cost": "93.8",
+          "extra": "",
+          "settlement": "",
+          "tracking": "",
+          "settleDate": "",
+          "id": "mtpu18fggrislt",
+          "createdAt": "2026-09-06T13:13:18.316Z",
+          "updatedAt": "2026-09-06T13:13:18.316Z"
+        },
+        {
+          "project": "大众",
+          "item": "提现",
+          "orderDate": "2026-08-31",
+          "cost": "",
+          "extra": "",
+          "settlement": "104",
+          "tracking": "",
+          "settleDate": "",
+          "id": "mtpu4ue3ns0dgu",
+          "createdAt": "2026-09-06T13:16:06.747Z",
+          "updatedAt": "2026-09-06T13:16:06.747Z"
+        },
+        {
+          "project": "大众",
+          "item": "提现",
+          "orderDate": "2026-08-31",
+          "cost": "",
+          "extra": "",
+          "settlement": "98",
+          "tracking": "",
+          "settleDate": "",
+          "id": "mtpu6rcuqg4q7p",
+          "createdAt": "2026-09-06T13:17:36.126Z",
+          "updatedAt": "2026-09-06T13:17:36.126Z"
         }
-      ]
+      ],
+      "2026-09": []
     }
   },
   "height": 180,
@@ -769,5 +809,5 @@
     "2026-08-21T18:29:49.171Z": "2026-08-21T18:30:04.590Z"
   },
   "dataFixVersion": 1,
-  "syncedAt": "2026-08-29T18:29:50.421Z"
+  "syncedAt": "2026-09-06T13:39:12.173Z"
 }
