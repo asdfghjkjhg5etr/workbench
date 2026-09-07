@@ -438,12 +438,12 @@
           "orderDate": "2026-08-19",
           "cost": "36.5",
           "extra": "",
-          "settlement": "",
+          "settlement": "50",
           "tracking": "",
           "settleDate": "",
           "id": "mt04faks2hx8u3",
           "createdAt": "2026-08-19T13:22:09.866Z",
-          "updatedAt": "2026-08-19T13:22:09.866Z"
+          "updatedAt": "2026-09-07T10:23:17.725Z"
         },
         {
           "project": "tap好评",
@@ -809,5 +809,5 @@
     "2026-08-21T18:29:49.171Z": "2026-08-21T18:30:04.590Z"
   },
   "dataFixVersion": 1,
-  "syncedAt": "2026-09-06T13:39:12.173Z"
+  "syncedAt": "2026-09-07T10:23:22.733Z"
 }
