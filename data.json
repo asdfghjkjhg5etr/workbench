@@ -786,6 +786,19 @@
       ],
       "2026-09": [
         {
+          "project": "大众",
+          "item": "辉100头",
+          "orderDate": "2026-09-09",
+          "cost": "46",
+          "extra": "",
+          "settlement": "",
+          "tracking": "",
+          "settleDate": "",
+          "id": "mttpl1htw6z1ru",
+          "createdAt": "2026-09-09T06:19:49.073Z",
+          "updatedAt": "2026-09-09T06:19:49.073Z"
+        },
+        {
           "project": "zfb",
           "item": "酷奇蚂蚁10头",
           "orderDate": "2026-09-07",
@@ -823,5 +836,5 @@
     "2026-08-21T18:29:49.171Z": "2026-08-21T18:30:04.590Z"
   },
   "dataFixVersion": 1,
-  "syncedAt": "2026-09-07T10:26:33.929Z"
+  "syncedAt": "2026-09-09T06:20:17.375Z"
 }
