@@ -940,6 +940,19 @@
           "id": "mtyex9pij58plc",
           "createdAt": "2026-09-12T13:20:14.694Z",
           "updatedAt": "2026-09-12T13:20:14.694Z"
+        },
+        {
+          "project": "tap好评",
+          "item": "钉钉",
+          "orderDate": "2026-09-13",
+          "cost": "",
+          "extra": "",
+          "settlement": "6",
+          "tracking": "",
+          "settleDate": "",
+          "id": "mtzvczyyzenuva",
+          "createdAt": "2026-09-13T13:48:08.602Z",
+          "updatedAt": "2026-09-13T13:48:08.602Z"
         }
       ]
     }
@@ -966,5 +979,5 @@
     "2026-08-21T18:29:49.171Z": "2026-08-21T18:30:04.590Z"
   },
   "dataFixVersion": 1,
-  "syncedAt": "2026-09-13T13:47:54.182Z"
+  "syncedAt": "2026-09-13T13:48:16.077Z"
 }
