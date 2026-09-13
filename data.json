@@ -882,12 +882,12 @@
           "orderDate": "2026-09-10",
           "cost": "35.5",
           "extra": "",
-          "settlement": "40",
+          "settlement": "",
           "tracking": "",
           "settleDate": "",
           "id": "mtvmon660y3q1n",
           "createdAt": "2026-09-10T14:34:10.638Z",
-          "updatedAt": "2026-09-10T14:34:10.638Z"
+          "updatedAt": "2026-09-13T19:25:58.524Z"
         },
         {
           "project": "大众",
@@ -992,5 +992,5 @@
     "2026-08-21T18:29:49.171Z": "2026-08-21T18:30:04.590Z"
   },
   "dataFixVersion": 1,
-  "syncedAt": "2026-09-13T19:25:40.944Z"
+  "syncedAt": "2026-09-13T19:26:17.748Z"
 }
