@@ -966,6 +966,19 @@
           "id": "mtzvczyyzenuva",
           "createdAt": "2026-09-13T13:48:08.602Z",
           "updatedAt": "2026-09-13T13:48:08.602Z"
+        },
+        {
+          "project": "快手",
+          "item": "提现",
+          "orderDate": "2026-09-14",
+          "cost": "",
+          "extra": "",
+          "settlement": "45",
+          "tracking": "",
+          "settleDate": "",
+          "id": "mu07gcwp88vs8e",
+          "createdAt": "2026-09-13T19:26:40.727Z",
+          "updatedAt": "2026-09-13T19:26:40.727Z"
         }
       ]
     }
@@ -992,5 +1005,5 @@
     "2026-08-21T18:29:49.171Z": "2026-08-21T18:30:04.590Z"
   },
   "dataFixVersion": 1,
-  "syncedAt": "2026-09-13T19:26:17.748Z"
+  "syncedAt": "2026-09-13T19:26:46.429Z"
 }
