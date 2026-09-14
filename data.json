@@ -1031,6 +1031,19 @@
           "id": "mu0qeiwecmvot5",
           "createdAt": "2026-09-14T04:17:07.886Z",
           "updatedAt": "2026-09-14T04:17:07.886Z"
+        },
+        {
+          "project": "app",
+          "item": "微信助力",
+          "orderDate": "2026-09-14",
+          "cost": "",
+          "extra": "",
+          "settlement": "2",
+          "tracking": "",
+          "settleDate": "",
+          "id": "mu0r21dat4fmn4",
+          "createdAt": "2026-09-14T04:35:24.910Z",
+          "updatedAt": "2026-09-14T04:35:24.910Z"
         }
       ]
     }
@@ -1057,5 +1070,5 @@
     "2026-08-21T18:29:49.171Z": "2026-08-21T18:30:04.590Z"
   },
   "dataFixVersion": 1,
-  "syncedAt": "2026-09-14T04:17:22.429Z"
+  "syncedAt": "2026-09-14T04:35:29.956Z"
 }
