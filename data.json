@@ -992,6 +992,19 @@
           "id": "mu07gcwp88vs8e",
           "createdAt": "2026-09-13T19:26:40.727Z",
           "updatedAt": "2026-09-13T19:26:40.727Z"
+        },
+        {
+          "project": "淘宝",
+          "item": "天猫100花",
+          "orderDate": "2026-09-14",
+          "cost": "7.5",
+          "extra": "",
+          "settlement": "10",
+          "tracking": "",
+          "settleDate": "",
+          "id": "mu0plgdo52jpc4",
+          "createdAt": "2026-09-14T03:54:31.596Z",
+          "updatedAt": "2026-09-14T03:54:31.596Z"
         }
       ]
     }
@@ -1018,5 +1031,5 @@
     "2026-08-21T18:29:49.171Z": "2026-08-21T18:30:04.590Z"
   },
   "dataFixVersion": 1,
-  "syncedAt": "2026-09-14T03:54:06.995Z"
+  "syncedAt": "2026-09-14T03:54:37.556Z"
 }
