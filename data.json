@@ -786,19 +786,6 @@
       ],
       "2026-09": [
         {
-          "project": "zfb",
-          "item": "酷奇蚂蚁10头",
-          "orderDate": "2026-09-07",
-          "cost": "37.5",
-          "extra": "",
-          "settlement": "50",
-          "tracking": "",
-          "settleDate": "2026-09-09",
-          "id": "mtr3i8vdcmgeqs",
-          "createdAt": "2026-09-07T10:26:14.761Z",
-          "updatedAt": "2026-09-09T06:20:40.848Z"
-        },
-        {
           "project": "大众",
           "item": "辉100头",
           "orderDate": "2026-09-10",
@@ -810,6 +797,19 @@
           "id": "mttpl1htw6z1ru",
           "createdAt": "2026-09-09T06:19:49.073Z",
           "updatedAt": "2026-09-10T12:18:27.641Z"
+        },
+        {
+          "project": "zfb",
+          "item": "酷奇蚂蚁10头",
+          "orderDate": "2026-09-07",
+          "cost": "37.5",
+          "extra": "",
+          "settlement": "50",
+          "tracking": "",
+          "settleDate": "2026-09-09",
+          "id": "mtr3i8vdcmgeqs",
+          "createdAt": "2026-09-07T10:26:14.761Z",
+          "updatedAt": "2026-09-09T06:20:40.848Z"
         },
         {
           "project": "tap好评",
@@ -947,6 +947,19 @@
           "orderDate": "2026-09-13",
           "cost": "",
           "extra": "",
+          "settlement": "6",
+          "tracking": "",
+          "settleDate": "",
+          "id": "mtzvczyyzenuva",
+          "createdAt": "2026-09-13T13:48:08.602Z",
+          "updatedAt": "2026-09-13T13:48:08.602Z"
+        },
+        {
+          "project": "tap好评",
+          "item": "钉钉",
+          "orderDate": "2026-09-13",
+          "cost": "",
+          "extra": "",
           "settlement": "10",
           "tracking": "",
           "settleDate": "",
@@ -960,12 +973,12 @@
           "orderDate": "2026-09-13",
           "cost": "",
           "extra": "",
-          "settlement": "6",
+          "settlement": "2",
           "tracking": "",
           "settleDate": "",
-          "id": "mtzvczyyzenuva",
-          "createdAt": "2026-09-13T13:48:08.602Z",
-          "updatedAt": "2026-09-13T13:48:08.602Z"
+          "id": "mtzy203nhxgd5g",
+          "createdAt": "2026-09-13T15:03:34.403Z",
+          "updatedAt": "2026-09-13T15:03:34.403Z"
         },
         {
           "project": "快手",
@@ -1005,5 +1018,5 @@
     "2026-08-21T18:29:49.171Z": "2026-08-21T18:30:04.590Z"
   },
   "dataFixVersion": 1,
-  "syncedAt": "2026-09-13T19:26:46.429Z"
+  "syncedAt": "2026-09-14T03:54:06.995Z"
 }
