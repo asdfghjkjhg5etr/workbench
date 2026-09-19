@@ -1148,6 +1148,19 @@
           "id": "mu8k31tgeo8l7j",
           "createdAt": "2026-09-19T15:42:24.244Z",
           "updatedAt": "2026-09-19T15:42:24.244Z"
+        },
+        {
+          "project": "tap好评",
+          "item": "钉钉",
+          "orderDate": "2026-09-19",
+          "cost": "",
+          "extra": "",
+          "settlement": "3",
+          "tracking": "",
+          "settleDate": "",
+          "id": "mu8k9bgflfaphg",
+          "createdAt": "2026-09-19T15:47:16.671Z",
+          "updatedAt": "2026-09-19T15:47:16.671Z"
         }
       ]
     }
@@ -1174,5 +1187,5 @@
     "2026-08-21T18:29:49.171Z": "2026-08-21T18:30:04.590Z"
   },
   "dataFixVersion": 1,
-  "syncedAt": "2026-09-19T15:42:28.073Z"
+  "syncedAt": "2026-09-19T15:47:21.686Z"
 }
