@@ -1161,6 +1161,19 @@
           "id": "mu8k9bgflfaphg",
           "createdAt": "2026-09-19T15:47:16.671Z",
           "updatedAt": "2026-09-19T15:47:16.671Z"
+        },
+        {
+          "project": "刷单",
+          "item": "PDD",
+          "orderDate": "2026-09-19",
+          "cost": "71.3",
+          "extra": "",
+          "settlement": "",
+          "tracking": "",
+          "settleDate": "",
+          "id": "mu9d6p5ju55ap7",
+          "createdAt": "2026-09-20T05:17:03.319Z",
+          "updatedAt": "2026-09-20T05:17:03.319Z"
         }
       ]
     }
@@ -1187,5 +1200,5 @@
     "2026-08-21T18:29:49.171Z": "2026-08-21T18:30:04.590Z"
   },
   "dataFixVersion": 1,
-  "syncedAt": "2026-09-19T15:47:21.686Z"
+  "syncedAt": "2026-09-20T05:17:08.339Z"
 }
