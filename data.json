@@ -1174,6 +1174,19 @@
           "id": "mu9d6p5ju55ap7",
           "createdAt": "2026-09-20T05:17:03.319Z",
           "updatedAt": "2026-09-20T05:17:03.319Z"
+        },
+        {
+          "project": "助力",
+          "item": "dy人头",
+          "orderDate": "2026-09-20",
+          "cost": "",
+          "extra": "",
+          "settlement": "4",
+          "tracking": "",
+          "settleDate": "",
+          "id": "mu9y1fo8vpnxmd",
+          "createdAt": "2026-09-20T15:00:49.687Z",
+          "updatedAt": "2026-09-20T15:00:49.687Z"
         }
       ]
     }
@@ -1200,5 +1213,5 @@
     "2026-08-21T18:29:49.171Z": "2026-08-21T18:30:04.590Z"
   },
   "dataFixVersion": 1,
-  "syncedAt": "2026-09-20T05:17:08.339Z"
+  "syncedAt": "2026-09-20T16:04:46.072Z"
 }
