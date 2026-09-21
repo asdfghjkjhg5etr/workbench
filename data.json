@@ -1239,6 +1239,19 @@
           "id": "mubdbja48dom5b",
           "createdAt": "2026-09-21T14:56:21.340Z",
           "updatedAt": "2026-09-21T14:56:21.340Z"
+        },
+        {
+          "project": "快手",
+          "item": "金币提现",
+          "orderDate": "2026-09-21",
+          "cost": "",
+          "extra": "",
+          "settlement": "15",
+          "tracking": "",
+          "settleDate": "",
+          "id": "mubevgz7l668bs",
+          "createdAt": "2026-09-21T15:39:51.091Z",
+          "updatedAt": "2026-09-21T15:39:51.091Z"
         }
       ]
     }
@@ -1265,5 +1278,5 @@
     "2026-08-21T18:29:49.171Z": "2026-08-21T18:30:04.590Z"
   },
   "dataFixVersion": 1,
-  "syncedAt": "2026-09-21T14:56:28.518Z"
+  "syncedAt": "2026-09-21T15:39:56.901Z"
 }
