@@ -1317,6 +1317,19 @@
           "id": "mufqcaxuyfzfbp",
           "createdAt": "2026-09-24T16:11:56.898Z",
           "updatedAt": "2026-09-24T16:11:56.898Z"
+        },
+        {
+          "project": "盼之",
+          "item": "9头",
+          "orderDate": "2026-09-25",
+          "cost": "8.3",
+          "extra": "",
+          "settlement": "",
+          "tracking": "",
+          "settleDate": "",
+          "id": "mufqd8kq3istfi",
+          "createdAt": "2026-09-24T16:12:40.490Z",
+          "updatedAt": "2026-09-24T16:12:40.490Z"
         }
       ]
     }
@@ -1343,5 +1356,5 @@
     "2026-08-21T18:29:49.171Z": "2026-08-21T18:30:04.590Z"
   },
   "dataFixVersion": 1,
-  "syncedAt": "2026-09-24T16:12:03.731Z"
+  "syncedAt": "2026-09-24T16:12:47.357Z"
 }
