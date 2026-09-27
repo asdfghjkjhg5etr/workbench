@@ -1389,12 +1389,12 @@
           "orderDate": "2026-09-26",
           "cost": "35.5",
           "extra": "",
-          "settlement": "",
+          "settlement": "52",
           "tracking": "",
           "settleDate": "",
           "id": "mujtpiz21ad8ux",
           "createdAt": "2026-09-27T12:57:17.390Z",
-          "updatedAt": "2026-09-27T12:57:17.390Z"
+          "updatedAt": "2026-09-27T13:02:03.135Z"
         },
         {
           "project": "大众",
@@ -1447,5 +1447,5 @@
     "2026-08-21T18:29:49.171Z": "2026-08-21T18:30:04.590Z"
   },
   "dataFixVersion": 1,
-  "syncedAt": "2026-09-27T13:01:42.630Z"
+  "syncedAt": "2026-09-27T13:02:09.827Z"
 }
