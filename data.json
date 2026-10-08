@@ -1525,6 +1525,19 @@
           "id": "muz3siu19mwsuq",
           "createdAt": "2026-10-08T05:36:05.977Z",
           "updatedAt": "2026-10-08T05:36:05.977Z"
+        },
+        {
+          "project": "app",
+          "item": "关注",
+          "orderDate": "2026-09-28",
+          "cost": "",
+          "extra": "",
+          "settlement": "3",
+          "tracking": "",
+          "settleDate": "",
+          "id": "muz3w9so8rqu56",
+          "createdAt": "2026-10-08T05:39:00.888Z",
+          "updatedAt": "2026-10-08T05:39:00.888Z"
         }
       ],
       "2026-10": []
@@ -1553,5 +1566,5 @@
     "mufqd8kq3istfi": "2026-09-27T13:02:18.768Z"
   },
   "dataFixVersion": 1,
-  "syncedAt": "2026-10-08T05:36:10.993Z"
+  "syncedAt": "2026-10-08T05:39:06.452Z"
 }
