@@ -1538,6 +1538,19 @@
           "id": "muz3w9so8rqu56",
           "createdAt": "2026-10-08T05:39:00.888Z",
           "updatedAt": "2026-10-08T05:39:00.888Z"
+        },
+        {
+          "project": "平安金",
+          "item": "提现",
+          "orderDate": "2026-09-29",
+          "cost": "",
+          "extra": "",
+          "settlement": "228",
+          "tracking": "",
+          "settleDate": "",
+          "id": "muz3xlysn3a7q9",
+          "createdAt": "2026-10-08T05:40:03.316Z",
+          "updatedAt": "2026-10-08T05:40:03.316Z"
         }
       ],
       "2026-10": []
@@ -1566,5 +1579,5 @@
     "mufqd8kq3istfi": "2026-09-27T13:02:18.768Z"
   },
   "dataFixVersion": 1,
-  "syncedAt": "2026-10-08T05:39:06.452Z"
+  "syncedAt": "2026-10-08T05:40:08.326Z"
 }
