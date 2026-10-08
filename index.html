@@ -551,7 +551,7 @@ tr:hover td { background: #f8faff; }
   </nav>
   <div class="sidebar-footer" style="flex-direction:column;align-items:flex-start;gap:4px">
     <div style="display:flex;justify-content:space-between;width:100%;align-items:center">
-      <span>v2.5</span>
+      <span>v2.6</span>
       <button class="sync-btn" onclick="openSyncPanel()">🔄 同步</button>
     </div>
     <div class="sync-status" id="sync-status-bar">
@@ -1608,6 +1608,15 @@ function openMaoyangModal(title, editId) {
 }
 function closeMaoyangModal() { document.getElementById('maoyang-modal').classList.remove('show'); }
 function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+// 由日期字符串解析所属月份 YYYY-MM（下单/结账日期优先；date input 恒为 YYYY-MM-DD）
+function periodOf(d) {
+  if (!d) return '';
+  let m = /^(\d{4})-(\d{2})-(\d{2})/.exec(d);
+  if (m) return m[1] + '-' + m[2];
+  m = /^(\d{4})\/(\d{1,2})\/(\d{1,2})/.exec(d);
+  if (m) return m[1] + '-' + String(+m[2]).padStart(2, '0');
+  return '';
+}
 function saveMaoyangRecord() {
   const record = {
     project: document.getElementById('my-project').value.trim(),
@@ -1622,23 +1631,35 @@ function saveMaoyangRecord() {
   if (!record.item) { showToast('请输入物品名称'); return; }
   if (!record.orderDate && !record.settleDate) { showToast('下单日期和结账日期至少填写一个'); return; }
   const editId = document.getElementById('my-edit-id').value;
-  const period = state.maoyang.periods[state.currentPeriod];
+  // 按日期自动归类到对应月份：下单日期优先，其次结账日期；都没填则用当前板块兜底
+  let targetPeriod = periodOf(record.orderDate) || periodOf(record.settleDate) || state.currentPeriod;
+  ensurePeriod(targetPeriod);
   const now = new Date().toISOString();
   if (editId !== '') {
+    const period = state.maoyang.periods[state.currentPeriod];
     const old = period[parseInt(editId)] || {};
     record.id = old.id || genId();
     record.createdAt = old.createdAt || now;
     record.updatedAt = now;
-    period[parseInt(editId)] = record;
+    if (targetPeriod !== state.currentPeriod) {
+      // 跨月编辑：从原板块按 id 移除，存入新月份
+      const idx = period.findIndex(r => r.id === record.id);
+      if (idx !== -1) period.splice(idx, 1);
+      state.maoyang.periods[targetPeriod].push(record);
+    } else {
+      // 同月编辑：原地替换，避免重复写入
+      period[parseInt(editId)] = record;
+    }
   } else {
     record.id = genId();
     record.createdAt = now;
     record.updatedAt = now;
-    period.push(record);
+    state.maoyang.periods[targetPeriod].push(record);
   }
+  state.currentPeriod = targetPeriod; // 切到刚录入的月份，方便立即查看
   saveState(); closeMaoyangModal();
-  renderMaoyangList(); renderMaoyangSummary();
-  showToast(editId!==''?'已更新':'已添加');
+  renderMaoyangTabs(); renderMaoyangList(); renderMaoyangSummary();
+  showToast((editId!==''?'已更新':'已添加') + '：归入' + targetPeriod.replace('-','年') + '月');
 }
 function deleteMaoyangRow(i) {
   if (!confirm('确定删除？')) return;
