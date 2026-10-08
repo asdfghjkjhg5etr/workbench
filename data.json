@@ -1408,8 +1408,22 @@
           "id": "mufqcaxuyfzfbp",
           "createdAt": "2026-09-24T16:11:56.898Z",
           "updatedAt": "2026-09-24T16:11:56.898Z"
+        },
+        {
+          "project": "大众",
+          "item": "辉100头",
+          "orderDate": "2026-09-28",
+          "cost": "23",
+          "extra": "",
+          "settlement": "",
+          "tracking": "",
+          "settleDate": "",
+          "id": "muz3ms9ej5yx89",
+          "createdAt": "2026-10-08T05:31:38.258Z",
+          "updatedAt": "2026-10-08T05:31:38.258Z"
         }
-      ]
+      ],
+      "2026-10": []
     }
   },
   "height": 180,
@@ -1435,5 +1449,5 @@
     "mufqd8kq3istfi": "2026-09-27T13:02:18.768Z"
   },
   "dataFixVersion": 1,
-  "syncedAt": "2026-10-08T05:29:57.641Z"
+  "syncedAt": "2026-10-08T05:31:44.220Z"
 }
