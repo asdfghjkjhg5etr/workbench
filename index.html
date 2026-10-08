@@ -551,7 +551,7 @@ tr:hover td { background: #f8faff; }
   </nav>
   <div class="sidebar-footer" style="flex-direction:column;align-items:flex-start;gap:4px">
     <div style="display:flex;justify-content:space-between;width:100%;align-items:center">
-      <span>v2.6</span>
+      <span>v2.7</span>
       <button class="sync-btn" onclick="openSyncPanel()">🔄 同步</button>
     </div>
     <div class="sync-status" id="sync-status-bar">
@@ -811,7 +811,10 @@ function loadState() {
       state.deletedIds = parsed.deletedIds || {};
       state.dataFixVersion = parsed.dataFixVersion || 0;
       migrateWeights();
-      migrateMaoyang();
+      if (migrateMaoyang()) { // v2.7: 老数据落在错误月份时，加载即自动修正并保存
+        saveState();
+        setTimeout(() => showToast('📅 羊毛记录已按下单日期重新归类到对应月份'), 900);
+      }
     }
     if ((state.dataFixVersion || 0) < DATA_FIX_VERSION) {
       const n = fixDataV1();
@@ -1363,6 +1366,47 @@ function migrateMaoyang() {
       delete r.name; delete r.advance; delete r.shipping; delete r.payment;
     });
   });
+  return normalizeMaoyangPeriods(); // v2.7: 字段兼容完成后再按下单日期把记录重新归类
+}
+// ===== v2.7 羊毛按下单日期自动归类（对已有历史数据同样生效）=====
+// 记录应属月份：下单日期优先，其次结账日期；都没有则返回 ''（表示原地保留）
+function maoyangTargetPeriod(r) {
+  return periodOf(r && r.orderDate) || periodOf(r && r.settleDate) || '';
+}
+// 把已有记录重新归类到正确月份：
+//  - 跨月份按 id 去重（同一条记录只留在最新一处，修复"旧数据落在错误月份"）
+//  - 内容完全相同的只留最新（与 v2.2 fixDataV1 / 云端合并口径一致）
+// 幂等：归类正确后再次运行不再产生变化；加载与合并后都会调用，保证多设备 + 云端三处收敛到同一布局
+function normalizeMaoyangPeriods() {
+  const src = (state.maoyang && state.maoyang.periods) ? state.maoyang.periods : {};
+  const byId = new Map();  // id -> 记录（同 id 出现在多个月份时只保留最新版本）
+  const home = new Map();  // id -> 原本所在月份（无日期可依据时原地保留）
+  Object.keys(src).forEach(pk => {
+    (src[pk] || []).forEach(r => {
+      if (!r) return;
+      if (!r.id) r.id = genId();
+      const prev = byId.get(r.id);
+      if (!prev) { byId.set(r.id, r); home.set(r.id, pk); return; }
+      if (recTime(r) > recTime(prev)) byId.set(r.id, r);
+    });
+  });
+  const byContent = new Map(); // 内容 key -> id
+  byId.forEach((r, id) => {
+    const ck = maoyangContentKey(r), oldId = byContent.get(ck);
+    if (oldId === undefined || recTime(r) > recTime(byId.get(oldId))) byContent.set(ck, id);
+  });
+  const out = {};
+  Object.keys(src).forEach(pk => { if (!out[pk]) out[pk] = []; }); // 保留原有月份 tab（含已空的月份）
+  byContent.forEach(id => {
+    const r = byId.get(id);
+    const tgt = maoyangTargetPeriod(r) || home.get(id) || '';
+    if (!tgt) return;
+    if (!out[tgt]) out[tgt] = [];
+    out[tgt].push(r);
+  });
+  const changed = JSON.stringify(out) !== JSON.stringify(src);
+  state.maoyang = { periods: out };
+  return changed;
 }
 function getMaoyangPeriods() { return Object.keys(state.maoyang.periods).sort((a,b)=>b.localeCompare(a)); }
 function renderMaoyangPage() {
@@ -2211,8 +2255,8 @@ function mergeRemote(remote) {
     if (JSON.stringify(merged) !== JSON.stringify(state.maoyang)) { state.maoyang = merged; changed = true; }
   }
   if (changed) {
+    migrateMaoyang(); // v2.7: 合并后先重新归类，再保存——确保推上云端的是修正后的月份布局
     saveState(); // 仅保存本地，不再自动上传
-    migrateMaoyang();
     switchPage(state.currentPage);
   } else if (newerClear || delChanged) {
     saveState(); // 仅删除基线变化（如云端墓碑同步）也持久化
