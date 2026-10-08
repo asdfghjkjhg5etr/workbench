@@ -1551,6 +1551,19 @@
           "id": "muz3xlysn3a7q9",
           "createdAt": "2026-10-08T05:40:03.316Z",
           "updatedAt": "2026-10-08T05:40:03.316Z"
+        },
+        {
+          "project": "刷单",
+          "item": "咸鱼",
+          "orderDate": "2026-09-30",
+          "cost": "5",
+          "extra": "",
+          "settlement": "6.5",
+          "tracking": "",
+          "settleDate": "",
+          "id": "muz3yh9kz4bzue",
+          "createdAt": "2026-10-08T05:40:43.880Z",
+          "updatedAt": "2026-10-08T05:40:43.880Z"
         }
       ],
       "2026-10": []
@@ -1579,5 +1592,5 @@
     "mufqd8kq3istfi": "2026-09-27T13:02:18.768Z"
   },
   "dataFixVersion": 1,
-  "syncedAt": "2026-10-08T05:40:08.326Z"
+  "syncedAt": "2026-10-08T05:40:49.621Z"
 }
