@@ -1800,6 +1800,19 @@
           "id": "mv7oqf1sv34rbi",
           "createdAt": "2026-10-14T05:44:29.104Z",
           "updatedAt": "2026-10-14T05:44:29.104Z"
+        },
+        {
+          "project": "大众",
+          "item": "提现",
+          "orderDate": "2026-10-14",
+          "cost": "",
+          "extra": "",
+          "settlement": "24",
+          "tracking": "",
+          "settleDate": "",
+          "id": "mv7or43hwqnjvu",
+          "createdAt": "2026-10-14T05:45:01.565Z",
+          "updatedAt": "2026-10-14T05:45:01.565Z"
         }
       ]
     }
@@ -1827,5 +1840,5 @@
     "mufqd8kq3istfi": "2026-09-27T13:02:18.768Z"
   },
   "dataFixVersion": 1,
-  "syncedAt": "2026-10-14T05:44:34.112Z"
+  "syncedAt": "2026-10-14T05:45:07.656Z"
 }
