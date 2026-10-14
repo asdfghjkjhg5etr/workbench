@@ -1813,6 +1813,19 @@
           "id": "mv7or43hwqnjvu",
           "createdAt": "2026-10-14T05:45:01.565Z",
           "updatedAt": "2026-10-14T05:45:01.565Z"
+        },
+        {
+          "project": "JD",
+          "item": "提现",
+          "orderDate": "2026-10-14",
+          "cost": "",
+          "extra": "",
+          "settlement": "50",
+          "tracking": "",
+          "settleDate": "",
+          "id": "mv7qlrexthck8c",
+          "createdAt": "2026-10-14T06:36:51.081Z",
+          "updatedAt": "2026-10-14T06:36:51.081Z"
         }
       ]
     }
@@ -1840,5 +1853,5 @@
     "mufqd8kq3istfi": "2026-09-27T13:02:18.768Z"
   },
   "dataFixVersion": 1,
-  "syncedAt": "2026-10-14T05:45:07.656Z"
+  "syncedAt": "2026-10-14T06:36:56.104Z"
 }
