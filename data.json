@@ -1742,12 +1742,12 @@
           "orderDate": "2026-10-13",
           "cost": "35.5",
           "extra": "",
-          "settlement": "",
+          "settlement": "3.5",
           "tracking": "",
           "settleDate": "",
           "id": "mv7olebba7aca5",
           "createdAt": "2026-10-14T05:40:34.871Z",
-          "updatedAt": "2026-10-14T05:40:34.871Z"
+          "updatedAt": "2026-10-16T04:25:04.121Z"
         },
         {
           "project": "app",
@@ -1879,5 +1879,5 @@
     "mufqd8kq3istfi": "2026-09-27T13:02:18.768Z"
   },
   "dataFixVersion": 1,
-  "syncedAt": "2026-10-15T16:11:00.234Z"
+  "syncedAt": "2026-10-16T04:25:07.199Z"
 }
