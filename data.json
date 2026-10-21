@@ -1833,12 +1833,12 @@
           "orderDate": "2026-10-16",
           "cost": "46",
           "extra": "",
-          "settlement": "",
+          "settlement": "11.5",
           "tracking": "",
           "settleDate": "",
           "id": "mv8awwf0hx4cqv",
           "createdAt": "2026-10-14T16:05:23.100Z",
-          "updatedAt": "2026-10-15T16:05:00.234Z"
+          "updatedAt": "2026-10-21T16:17:32.136Z"
         },
         {
           "project": "快手",
@@ -1892,5 +1892,5 @@
     "mufqd8kq3istfi": "2026-09-27T13:02:18.768Z"
   },
   "dataFixVersion": 1,
-  "syncedAt": "2026-10-21T16:16:56.380Z"
+  "syncedAt": "2026-10-21T16:17:37.154Z"
 }
