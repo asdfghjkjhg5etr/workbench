@@ -1878,6 +1878,19 @@
           "id": "mvibg61p7si9qo",
           "createdAt": "2026-10-21T16:18:03.805Z",
           "updatedAt": "2026-10-21T16:18:03.805Z"
+        },
+        {
+          "project": "快手",
+          "item": "提现",
+          "orderDate": "2026-10-22",
+          "cost": "",
+          "extra": "",
+          "settlement": "30",
+          "tracking": "",
+          "settleDate": "",
+          "id": "mvjdlz3dz5pjda",
+          "createdAt": "2026-10-22T10:06:20.136Z",
+          "updatedAt": "2026-10-22T10:06:20.136Z"
         }
       ]
     }
@@ -1905,5 +1918,5 @@
     "mufqd8kq3istfi": "2026-09-27T13:02:18.768Z"
   },
   "dataFixVersion": 1,
-  "syncedAt": "2026-10-22T10:05:35.681Z"
+  "syncedAt": "2026-10-22T10:06:27.910Z"
 }
