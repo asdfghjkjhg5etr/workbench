@@ -1956,6 +1956,19 @@
           "id": "mvn1by25mthfts",
           "createdAt": "2026-10-24T23:33:41.549Z",
           "updatedAt": "2026-10-24T23:33:41.549Z"
+        },
+        {
+          "project": "大众",
+          "item": "酷奇10头",
+          "orderDate": "2026-10-25",
+          "cost": "71",
+          "extra": "",
+          "settlement": "",
+          "tracking": "",
+          "settleDate": "",
+          "id": "mvn1cf2v4evg3x",
+          "createdAt": "2026-10-24T23:34:03.607Z",
+          "updatedAt": "2026-10-24T23:34:03.607Z"
         }
       ]
     }
@@ -1984,5 +1997,5 @@
     "mvjrr6w894oa2f": "2026-10-24T23:27:36.705Z"
   },
   "dataFixVersion": 1,
-  "syncedAt": "2026-10-24T23:33:47.137Z"
+  "syncedAt": "2026-10-24T23:34:08.193Z"
 }
