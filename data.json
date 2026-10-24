@@ -1911,12 +1911,38 @@
           "orderDate": "2026-10-23",
           "cost": "71",
           "extra": "",
-          "settlement": "",
+          "settlement": "21.3",
           "tracking": "",
           "settleDate": "",
           "id": "mvjrr6w894oa2f",
           "createdAt": "2026-10-22T16:42:18.152Z",
-          "updatedAt": "2026-10-22T16:42:18.152Z"
+          "updatedAt": "2026-10-24T09:00:21.077Z"
+        },
+        {
+          "project": "",
+          "item": "逸回收",
+          "orderDate": "2026-10-23",
+          "cost": "29",
+          "extra": "",
+          "settlement": "39",
+          "tracking": "",
+          "settleDate": "",
+          "id": "mvm67jeoqktj4g",
+          "createdAt": "2026-10-24T09:02:27.837Z",
+          "updatedAt": "2026-10-24T09:02:27.837Z"
+        },
+        {
+          "project": "大众",
+          "item": "提现",
+          "orderDate": "",
+          "cost": "",
+          "extra": "",
+          "settlement": "194.4",
+          "tracking": "",
+          "settleDate": "2026-10-24",
+          "id": "mvm6f94km1ma4h",
+          "createdAt": "2026-10-24T09:08:27.764Z",
+          "updatedAt": "2026-10-24T09:08:27.764Z"
         }
       ]
     }
@@ -1944,5 +1970,5 @@
     "mufqd8kq3istfi": "2026-09-27T13:02:18.768Z"
   },
   "dataFixVersion": 1,
-  "syncedAt": "2026-10-22T16:42:24.235Z"
+  "syncedAt": "2026-10-24T23:24:55.754Z"
 }
