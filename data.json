@@ -1982,6 +1982,19 @@
           "id": "mvn1mgmuh7yuzr",
           "createdAt": "2026-10-24T23:41:52.181Z",
           "updatedAt": "2026-10-24T23:41:52.181Z"
+        },
+        {
+          "project": "JD",
+          "item": "50现金酷奇",
+          "orderDate": "2026-10-25",
+          "cost": "42.5",
+          "extra": "",
+          "settlement": "",
+          "tracking": "",
+          "settleDate": "",
+          "id": "mvn1nacvlvik4z",
+          "createdAt": "2026-10-24T23:42:30.703Z",
+          "updatedAt": "2026-10-24T23:42:30.703Z"
         }
       ]
     }
@@ -2010,5 +2023,5 @@
     "mvjrr6w894oa2f": "2026-10-24T23:27:36.705Z"
   },
   "dataFixVersion": 1,
-  "syncedAt": "2026-10-24T23:41:57.236Z"
+  "syncedAt": "2026-10-24T23:42:35.755Z"
 }
