@@ -2013,14 +2013,14 @@
           "project": "快手",
           "item": "酷奇10头",
           "orderDate": "2026-10-25",
-          "cost": "",
+          "cost": "106.5",
           "extra": "",
-          "settlement": "106.5",
+          "settlement": "",
           "tracking": "",
           "settleDate": "",
           "id": "mvn7c0jx1e4hlq",
           "createdAt": "2026-10-25T02:21:42.476Z",
-          "updatedAt": "2026-10-25T02:21:42.476Z"
+          "updatedAt": "2026-10-25T02:22:07.346Z"
         }
       ]
     }
@@ -2049,5 +2049,5 @@
     "mvjrr6w894oa2f": "2026-10-24T23:27:36.705Z"
   },
   "dataFixVersion": 1,
-  "syncedAt": "2026-10-25T02:21:48.545Z"
+  "syncedAt": "2026-10-25T02:22:12.974Z"
 }
