@@ -2021,6 +2021,19 @@
           "id": "mvn7c0jx1e4hlq",
           "createdAt": "2026-10-25T02:21:42.476Z",
           "updatedAt": "2026-10-25T02:22:07.346Z"
+        },
+        {
+          "project": "快手",
+          "item": "酷奇10头补",
+          "orderDate": "2026-10-25",
+          "cost": "",
+          "extra": "",
+          "settlement": "17.75",
+          "tracking": "",
+          "settleDate": "",
+          "id": "mvnqe7s3y66vox",
+          "createdAt": "2026-10-25T11:15:17.857Z",
+          "updatedAt": "2026-10-25T11:15:17.857Z"
         }
       ]
     }
@@ -2049,5 +2062,5 @@
     "mvjrr6w894oa2f": "2026-10-24T23:27:36.705Z"
   },
   "dataFixVersion": 1,
-  "syncedAt": "2026-10-25T02:22:12.974Z"
+  "syncedAt": "2026-10-25T17:06:13.607Z"
 }
