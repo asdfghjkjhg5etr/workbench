@@ -1995,6 +1995,19 @@
           "id": "mvn1nacvlvik4z",
           "createdAt": "2026-10-24T23:42:30.703Z",
           "updatedAt": "2026-10-24T23:42:30.703Z"
+        },
+        {
+          "project": "快手",
+          "item": "提现",
+          "orderDate": "2026-10-25",
+          "cost": "",
+          "extra": "",
+          "settlement": "30",
+          "tracking": "",
+          "settleDate": "",
+          "id": "mvn7ao9cak6r3x",
+          "createdAt": "2026-10-25T02:20:39.885Z",
+          "updatedAt": "2026-10-25T02:20:39.885Z"
         }
       ]
     }
@@ -2023,5 +2036,5 @@
     "mvjrr6w894oa2f": "2026-10-24T23:27:36.705Z"
   },
   "dataFixVersion": 1,
-  "syncedAt": "2026-10-24T23:46:21.845Z"
+  "syncedAt": "2026-10-25T02:20:46.366Z"
 }
