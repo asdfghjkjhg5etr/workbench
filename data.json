@@ -2213,9 +2213,9 @@
           "settlement": "",
           "tracking": "",
           "settleDate": "",
-          "id": "mvzdzo2cpjeard",
-          "createdAt": "2026-11-02T15:01:17.844Z",
-          "updatedAt": "2026-11-02T15:01:17.844Z"
+          "id": "mvze0akd3thjja",
+          "createdAt": "2026-11-02T15:01:47.005Z",
+          "updatedAt": "2026-11-02T15:01:47.005Z"
         }
       ],
       "2026-11": [
@@ -2272,5 +2272,5 @@
     "mvjrr6w894oa2f": "2026-10-24T23:27:36.705Z"
   },
   "dataFixVersion": 1,
-  "syncedAt": "2026-11-02T15:01:26.026Z"
+  "syncedAt": "2026-11-02T15:01:54.463Z"
 }
