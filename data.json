@@ -2374,6 +2374,19 @@
           "id": "mw9gc93ob6oqpk",
           "createdAt": "2026-11-09T16:04:45.972Z",
           "updatedAt": "2026-11-09T16:04:45.972Z"
+        },
+        {
+          "project": "大众",
+          "item": "辉100头",
+          "orderDate": "2026-11-11",
+          "cost": "",
+          "extra": "",
+          "settlement": "34.5",
+          "tracking": "",
+          "settleDate": "",
+          "id": "mwavuc674utkxp",
+          "createdAt": "2026-11-10T16:06:30.175Z",
+          "updatedAt": "2026-11-10T16:06:30.175Z"
         }
       ]
     }
@@ -2403,5 +2416,5 @@
     "mvn1nacvlvik4z": "2026-11-02T15:06:51.258Z"
   },
   "dataFixVersion": 1,
-  "syncedAt": "2026-11-10T16:05:49.213Z"
+  "syncedAt": "2026-11-10T16:06:35.206Z"
 }
