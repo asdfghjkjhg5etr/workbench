@@ -551,7 +551,7 @@ tr:hover td { background: #f8faff; }
   </nav>
   <div class="sidebar-footer" style="flex-direction:column;align-items:flex-start;gap:4px">
     <div style="display:flex;justify-content:space-between;width:100%;align-items:center">
-      <span>v2.7</span>
+      <span>v2.8</span>
       <button class="sync-btn" onclick="openSyncPanel()">🔄 同步</button>
     </div>
     <div class="sync-status" id="sync-status-bar">
@@ -716,6 +716,12 @@ tr:hover td { background: #f8faff; }
       </div>
       <p style="font-size:12px;color:var(--text-muted);margin-top:8px" id="cloud-sync-info">未配置云端同步</p>
       <p style="font-size:12px;color:var(--text-muted);margin-top:2px" id="last-sync-info">尚未同步</p>
+    </div>
+    <div class="sync-section">
+      <h4>🩺 运行自检</h4>
+      <p>一键检测本机数据是否完整、云端各读取通道是否通畅。打开网站异常时先点这里看结果。</p>
+      <button class="btn btn-outline btn-sm" onclick="runSelfCheck()">🩺 开始自检</button>
+      <div id="selfcheck-result" style="font-size:12px;line-height:1.9;color:var(--text-muted);margin-top:10px;word-break:break-all"></div>
     </div>
     <div class="sync-section" style="border:1px solid var(--danger);background:#fef2f2">
       <h4 style="color:var(--danger)">🗑️ 清空全部数据</h4>
@@ -1717,6 +1723,34 @@ function deleteMaoyangRow(i) {
 function openSyncPanel() { document.getElementById('sync-modal').classList.add('show'); }
 function closeSyncPanel() { document.getElementById('sync-modal').classList.remove('show'); }
 
+// v2.8 自检：一键检测数据完整性 + 云端各通道连通性，结果直接显示在同步面板（手机可自查）
+async function runSelfCheck() {
+  const box = document.getElementById('selfcheck-result');
+  if (!box) return;
+  const lines = [];
+  const p = (s) => { lines.push(s); box.innerHTML = lines.join('<br>'); };
+  box.innerHTML = '正在检测，请稍候…';
+  p('【本机数据】');
+  const myCount = Object.values(state.maoyang.periods||{}).reduce((s,a)=>s+(a||[]).length,0);
+  p('· 待办 ' + (state.todos||[]).length + ' 条 / 体重 ' + (state.weights||[]).length + ' 条 / 羊毛 ' + myCount + ' 条');
+  p('· 数据存储：' + (getGhToken() ? '本机 + 云端（已配置Token）' : '仅本机（未配置Token，换设备/清缓存会丢）'));
+  p('· 上次同步：' + (function(){ try { return localStorage.getItem('wb_last_sync') ? fmtSyncTime(localStorage.getItem('wb_last_sync')) : '尚未同步'; } catch(e){ return '未知'; } })());
+  p('');
+  p('【云端通道检测】');
+  const chan = [ ['主通道', GH_API], ['备用-fastly', GH_FASTLY], ['备用-jsdelivr', GH_CDN], ['备用-raw', GH_RAW] ];
+  for (const [name, url] of chan) {
+    const t0 = Date.now();
+    try {
+      const resp = await fetch(url, { signal: timeoutSignal(9000), cache:'no-cache' });
+      const ms = Date.now() - t0;
+      if (resp.ok) { const txt = await resp.text(); p('· ' + name + '：✅ 可用（' + ms + 'ms，' + txt.length + ' 字节）'); }
+      else p('· ' + name + '：⚠️ HTTP ' + resp.status + '（' + ms + 'ms）');
+    } catch(e) { p('· ' + name + '：❌ 不可达（' + (e && e.message ? e.message : '超时') + '）'); }
+  }
+  p('');
+  p('如"主通道"不可用但 fastly 可用：数据仍会正常同步，无需处理。');
+}
+
 function exportData() {
   const json = JSON.stringify({ todos:state.todos, weights:state.weights, maoyang:state.maoyang, height:state.height }, null, 2);
   const blob = new Blob([json], { type:'application/json' });
@@ -1819,6 +1853,7 @@ let _lastFetchError = ''; // 最近一次云端读取失败原因（用于诊断
 let _fetchVia = 'api'; // 本次读取走的通道（api/raw/cdn，用于诊断）
 const GH_RAW = `https://raw.githubusercontent.com/${GH_OWNER}/${GH_REPO}/main/${GH_FILE}`;
 const GH_CDN = `https://cdn.jsdelivr.net/gh/${GH_OWNER}/${GH_REPO}@main/${GH_FILE}`;
+const GH_FASTLY = `https://fastly.jsdelivr.net/gh/${GH_OWNER}/${GH_REPO}@main/${GH_FILE}`; // v2.8: 国内直连实测 fastly 可用、cdn.jsdelivr 常不可达，加为备用读取通道
 async function ghFetch() {
   const headers = {};
   const token = getGhToken();
@@ -1842,7 +1877,7 @@ async function ghFetch() {
   } catch(e) { _lastFetchError = '网络/解码失败: ' + (e && e.message ? e.message : e); }
   // 通道 2/3：备用直链（v2.4：手机网络访问 api.github.com 不稳时兜底；jsDelivr 可能有数小时缓存，
   // 但合并逻辑幂等且墓碑安全，读到稍旧数据不会造成丢失，后续经 API 的同步会自动追平）
-  for (const pair of [['raw', GH_RAW], ['cdn', GH_CDN]]) {
+  for (const pair of [['raw', GH_RAW], ['cdn', GH_CDN], ['fastly', GH_FASTLY]]) {
     try {
       const resp = await fetch(pair[1], { signal: timeoutSignal(8000), cache: 'no-cache' });
       if (!resp.ok) continue;
