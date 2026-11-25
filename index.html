@@ -288,6 +288,18 @@ tr:hover td { background: #f8faff; }
 }
 .time-after { background: #fef3c7; color: #92400e; }
 .time-before { background: #dbeafe; color: #1e40af; }
+/* v2.9: 有氧/无氧运动勾选与标签 */
+.exercise-picks { display: flex; flex-direction: row; gap: 10px; align-items: center; flex-wrap: wrap; padding-bottom: 2px; }
+.exercise-picks label { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 600; color: var(--text); cursor: pointer; white-space: nowrap; }
+.exercise-picks input[type=checkbox] { width: 17px; height: 17px; accent-color: var(--primary); cursor: pointer; margin: 0; }
+.ex-tag { display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+.ex-cardio { background: #dcfce7; color: #15803d; }
+.ex-strength { background: #ede9fe; color: #6d28d9; }
+.ex-none { background: #f1f5f9; color: #94a3b8; }
+.exercise-summary { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+.exercise-summary .es-chip { padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: 600; }
+.es-chip.cardio { background: #dcfce7; color: #15803d; }
+.es-chip.strength { background: #ede9fe; color: #6d28d9; }
 .chart-container { position: relative; height: 320px; margin: 16px 0; }
 #weight-bmi-display { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .bmi-under { color: #3b82f6; }
@@ -551,7 +563,7 @@ tr:hover td { background: #f8faff; }
   </nav>
   <div class="sidebar-footer" style="flex-direction:column;align-items:flex-start;gap:4px">
     <div style="display:flex;justify-content:space-between;width:100%;align-items:center">
-      <span>v2.8</span>
+      <span>v2.9</span>
       <button class="sync-btn" onclick="openSyncPanel()">🔄 同步</button>
     </div>
     <div class="sync-status" id="sync-status-bar">
@@ -607,6 +619,10 @@ tr:hover td { background: #f8faff; }
       <div><label>时段</label><select id="weight-period"><option value="after">☀️ 睡后</option><option value="before">🌙 睡前</option></select></div>
       <div><label>体重 (kg)</label><input type="number" id="weight-value" placeholder="例: 65.0" step="0.1" min="20" max="300" inputmode="decimal"></div>
       <div><label>身高 (cm)</label><input type="number" id="weight-height" placeholder="例: 175" step="0.1" min="50" max="250" inputmode="decimal" onchange="saveHeight()"></div>
+      <div class="exercise-picks">
+        <label><input type="checkbox" id="weight-cardio"> 🏃 有氧</label>
+        <label><input type="checkbox" id="weight-strength"> 🏋️ 无氧</label>
+      </div>
       <button class="btn btn-primary" onclick="addWeight()">记录</button>
     </div>
   </div>
@@ -1069,10 +1085,16 @@ function addWeight() {
   if (!date) { showToast('请选择日期'); return; }
   if (!val||val<20||val>300) { showToast('请输入合理的体重(20-300kg)'); return; }
   saveHeight();
+  const cardio = !!(document.getElementById('weight-cardio') && document.getElementById('weight-cardio').checked);
+  const strength = !!(document.getElementById('weight-strength') && document.getElementById('weight-strength').checked);
   const now = new Date().toISOString();
-  state.weights.push({ date, period, value:val, createdAt:now, updatedAt:now });
+  // v2.9: exercise 记录当日运动类型（可都不选，兼容旧数据）
+  state.weights.push({ date, period, value:val, exercise:{ cardio, strength }, createdAt:now, updatedAt:now });
   state.weights.sort((a,b)=>new Date(a.date+(a.period==='after'?'T08:00':'T22:00'))-new Date(b.date+(b.period==='after'?'T08:00':'T22:00')));
-  document.getElementById('weight-value').value=''; saveState();
+  document.getElementById('weight-value').value='';
+  document.getElementById('weight-cardio').checked=false;
+  document.getElementById('weight-strength').checked=false;
+  saveState();
   const pk = getPeriodKey(date);
   renderMonthSelector(pk); renderWeightChart(pk); renderWeightStats(pk); renderWeightRecords(pk); renderWeightAdvice(pk); renderBMI();
   showToast('已记录');
@@ -1132,12 +1154,39 @@ function renderWeightStats(pk) {
   const avgB = b.length?(b.reduce((s,w)=>s+w.value,0)/b.length).toFixed(1):'-';
   const min = Math.min(...vals).toFixed(1), max = Math.max(...vals).toFixed(1);
   const latest = [...data].sort((a,b)=>new Date(b.date+(b.period==='after'?'T08:00':'T22:00'))-new Date(a.date+(a.period==='after'?'T08:00':'T22:00')))[0]; // v2.3: 按时间排序取最新，不依赖数组顺序
+  // v2.9: 运动统计 —— 按"天"去重（睡后/睡前同一天的勾选算一次运动），兼容旧数据无 exercise 字段
+  const exDays = { cardio:new Set(), strength:new Set() };
+  data.forEach(w=>{ if (w.exercise && w.exercise.cardio) exDays.cardio.add(w.date); if (w.exercise && w.exercise.strength) exDays.strength.add(w.date); });
+  const cardioDays = exDays.cardio.size, strengthDays = exDays.strength.size;
   c.innerHTML = `
     <div class="stat-card"><div class="stat-value">${latest?latest.value.toFixed(1):'-'} kg</div><div class="stat-label">最新 (${latest && latest.period==='after'?'睡后':'睡前'})</div></div>
     <div class="stat-card success"><div class="stat-value">${avgA} kg</div><div class="stat-label">月均睡后 (${a.length}次)</div></div>
     <div class="stat-card success"><div class="stat-value">${avgB} kg</div><div class="stat-label">月均睡前 (${b.length}次)</div></div>
     <div class="stat-card warning"><div class="stat-value">${min} ~ ${max} kg</div><div class="stat-label">月度区间</div></div>
+    <div class="stat-card success"><div class="stat-value">${cardioDays} 天</div><div class="stat-label">🏃 有氧运动</div></div>
+    <div class="stat-card"><div class="stat-value" style="color:#6d28d9">${strengthDays} 天</div><div class="stat-label">🏋️ 无氧运动</div></div>
   `;
+}
+// v2.9: 运动标签 HTML（可点击时点击补记），兼容旧数据无 exercise 字段
+function exerciseTagsHtml(w, clickable) {
+  const ex = w.exercise || {};
+  const cardio = !!ex.cardio, strength = !!ex.strength;
+  const cOn = cardio ? 'ex-cardio' : 'ex-none', sOn = strength ? 'ex-strength' : 'ex-none';
+  const act = clickable ? `onclick="toggleRecordExercise('${w.date}','${w.period}','cardio')"` : '';
+  const sat = clickable ? `onclick="toggleRecordExercise('${w.date}','${w.period}','strength')"` : '';
+  const cur = clickable ? ' style="cursor:pointer"' : '';
+  return `<span class="ex-tag ${cOn}"${cur} ${act}>🏃${cardio?'✓':'○'}</span> <span class="ex-tag ${sOn}"${cur} ${sat}>🏋️${strength?'✓':'○'}</span>`;
+}
+// v2.9: 点击记录上的运动标签补记/取消（只改运动字段，updatedAt 更新以走同步合并）
+function toggleRecordExercise(date, period, type) {
+  const w = state.weights.find(x=>x.date===date && x.period===period);
+  if (!w) return;
+  w.exercise = w.exercise || { cardio:false, strength:false };
+  w.exercise[type] = !w.exercise[type];
+  w.updatedAt = new Date().toISOString();
+  saveState();
+  const pk = getPeriodKey(date);
+  renderWeightStats(pk); renderWeightRecords(pk); renderWeightAdvice(pk);
 }
 function renderWeightRecords(pk) {
   const data = getWeightMonthData(pk), c = document.getElementById('weight-records');
@@ -1150,12 +1199,15 @@ function renderWeightRecords(pk) {
         <span>${formatDate(w.date)}</span>
         <span class="time-badge ${w.period==='after'?'time-after':'time-before'}">${w.period==='after'?'☀️ 睡后':'🌙 睡前'}</span>
         <span style="font-weight:600">${w.value.toFixed(1)} kg</span>
+        ${exerciseTagsHtml(w, true)}
         <button class="btn btn-danger btn-sm" onclick="deleteWeight('${w.date}','${w.period}')">删除</button>
       </div>`).join('');
   } else {
     const a = data.filter(w=>w.period==='after'), b = data.filter(w=>w.period==='before');
     const vals = data.map(w=>w.value);
     const avg = vals.length?(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1):'-';
+    const cardioDays = new Set(data.filter(w=>w.exercise&&w.exercise.cardio).map(w=>w.date)).size;
+    const strengthDays = new Set(data.filter(w=>w.exercise&&w.exercise.strength).map(w=>w.date)).size;
     c.innerHTML = `
       <div style="padding:16px;text-align:center">
         <p style="font-size:15px;margin-bottom:12px"><strong>${pk.replace('-','年')}月 总结</strong></p>
@@ -1164,10 +1216,12 @@ function renderWeightRecords(pk) {
           <div class="stat-card"><div class="stat-value">${b.length}</div><div class="stat-label">睡前记录</div></div>
           <div class="stat-card success"><div class="stat-value">${avg} kg</div><div class="stat-label">月均体重</div></div>
           <div class="stat-card warning"><div class="stat-value">${data.length}</div><div class="stat-label">总记录数</div></div>
+          <div class="stat-card success"><div class="stat-value">${cardioDays} 天</div><div class="stat-label">🏃 有氧</div></div>
+          <div class="stat-card"><div class="stat-value" style="color:#6d28d9">${strengthDays} 天</div><div class="stat-label">🏋️ 无氧</div></div>
         </div>
       </div>
       <hr style="border:none;border-top:1px solid var(--border);margin:8px 0">
-      ${sorted.map(w=>`<div class="weight-record"><span>${formatDate(w.date)}</span><span class="time-badge ${w.period==='after'?'time-after':'time-before'}">${w.period==='after'?'☀️ 睡后':'🌙 睡前'}</span><span style="font-weight:600">${w.value.toFixed(1)} kg</span></div>`).join('')}
+      ${sorted.map(w=>`<div class="weight-record"><span>${formatDate(w.date)}</span><span class="time-badge ${w.period==='after'?'time-after':'time-before'}">${w.period==='after'?'☀️ 睡后':'🌙 睡前'}</span><span style="font-weight:600">${w.value.toFixed(1)} kg</span>${exerciseTagsHtml(w, false)}</div>`).join('')}
     `;
   }
 }
@@ -1341,6 +1395,28 @@ function renderWeightAdvice(pk) {
     advices.push({ type:'success', icon:'🔥', title:`连续记录 ${maxStreak} 天！`, text:`连续记录是养成习惯的关键。你已经坚持了 ${maxStreak} 天，非常棒！继续保持，让健康成为生活的一部分。` });
   } else if (maxStreak >= 3) {
     advices.push({ type:'success', icon:'👏', title:`连续记录 ${maxStreak} 天`, text:`已经连续记录 ${maxStreak} 天了，好的开始！坚持到7天就能解锁更完整的趋势分析。` });
+  }
+
+  // 7. v2.9 运动建议：按有氧/无氧天数给出搭配建议
+  const cardioD = new Set(data.filter(w=>w.exercise&&w.exercise.cardio).map(w=>w.date)).size;
+  const strengthD = new Set(data.filter(w=>w.exercise&&w.exercise.strength).map(w=>w.date)).size;
+  const activeDays = new Set(data.filter(w=>w.exercise&&(w.exercise.cardio||w.exercise.strength)).map(w=>w.date)).size;
+  if (cardioD === 0 && strengthD === 0) {
+    advices.push({ type:'info', icon:'🏃', title:'试试记录运动', text:'本月还没勾选过运动。记录体重时勾选「有氧」（如跑步、快走、跳绳）或「无氧」（如力量训练），这里会自动帮你统计天数并给出搭配建议。' });
+  } else {
+    if (cardioD >= 3 && strengthD >= 2) {
+      advices.push({ type:'success', icon:'💪', title:`有氧 ${cardioD} 天 + 无氧 ${strengthD} 天，搭配很棒`, text:'有氧和无氧都有坚持，这是很理想的搭配：有氧提升心肺、帮助消耗，无氧增肌、提高基础代谢。继续保持这个节奏！' });
+    } else if (cardioD >= 3 && strengthD === 0) {
+      advices.push({ type:'info', icon:'🏋️', title:`有氧 ${cardioD} 天，建议加点无氧`, text:'有氧坚持得不错！建议每周搭配 2 次左右无氧训练（深蹲、俯卧撑、弹力带都算），肌肉量上来了，静息代谢更高，减重更不容易反弹。' });
+    } else if (strengthD >= 2 && cardioD === 0) {
+      advices.push({ type:'info', icon:'🏃', title:`无氧 ${strengthD} 天，建议加点有氧`, text:'力量训练坚持得很好！建议再搭配每周 3 次左右有氧（快走、慢跑、骑车），心肺更健康，也能帮助消耗多余热量。' });
+    } else {
+      advices.push({ type:'success', icon:'👍', title:`本月运动 ${activeDays} 天`, text:`已记录有氧 ${cardioD} 天、无氧 ${strengthD} 天。世界卫生组织建议成人每周至少 150 分钟中等强度有氧 + 2 次力量训练，慢慢往这个目标靠拢就很棒。` });
+    }
+    // 体重上升 + 运动偏少时给温和提醒
+    if (totalChange > 0.5 && activeDays < 4) {
+      advices.push({ type:'warning', icon:'🔎', title:'体重小升，运动可以跟上', text:`本月体重上升 ${totalChange.toFixed(1)}kg，同时运动记录偏少。不用焦虑，先从每天快走 20 分钟开始，配合记录，慢慢调整就好。` });
+    }
   }
 
   c.innerHTML = advices.map(a => `
