@@ -95,6 +95,17 @@
       },
       "createdAt": "2026-11-27T02:34:30.137Z",
       "updatedAt": "2026-11-27T02:34:30.137Z"
+    },
+    {
+      "date": "2026-11-28",
+      "period": "after",
+      "value": 99.35,
+      "exercise": {
+        "cardio": false,
+        "strength": false
+      },
+      "createdAt": "2026-11-28T02:50:51.803Z",
+      "updatedAt": "2026-11-28T02:50:51.803Z"
     }
   ],
   "maoyang": {
@@ -2461,5 +2472,5 @@
     "mvn1nacvlvik4z": "2026-11-02T15:06:51.258Z"
   },
   "dataFixVersion": 1,
-  "syncedAt": "2026-11-28T02:50:44.636Z"
+  "syncedAt": "2026-11-28T02:50:57.682Z"
 }
